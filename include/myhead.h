@@ -51,7 +51,7 @@ typedef struct{
 } limitset_t;
 
 typedef struct {
-    long long msgtype;
+    long msgtype;
     char commd;
     user_t user;
     env_t envdata;

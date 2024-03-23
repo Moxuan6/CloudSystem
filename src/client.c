@@ -18,10 +18,6 @@ void *ctrldev_thread(void *argv);
 /*初始化网络*/
 int client_network_init(int sockfd, struct sockaddr_in *addr, const char *ip, int port);
 
-pthread_t tids[MAX_THREADS]; // 保存线程ID的数组
-int tid_index = 0; // 下一个可用的数组索引
-pthread_mutex_t lock; // 互斥锁
-
 /*主函数*/
 int main(int argc, char const *argv[])
 {
@@ -53,12 +49,6 @@ int main(int argc, char const *argv[])
     // 接收登录信息
     if (-1 == recv(sockfd, &msg, sizeof(msg), 0)) {
         perror("fail to recv");
-        exit(-1);
-    }
-
-    // 初始化互斥锁
-    if (pthread_mutex_init(&lock, NULL) != 0) {
-        perror("fail to init mutex");
         exit(-1);
     }
 
@@ -106,24 +96,7 @@ int main(int argc, char const *argv[])
         return -1;
     }
 
-    // 保存线程ID
-    if (tid_index < MAX_THREADS) {
-        tids[tid_index++] = tid;
-    } else {
-        fprintf(stderr, "too many threads\n");
-        exit(-1);
-    }
-
-    // 等待线程结束
-    for (int i = 0; i < tid_index; i++) {
-        pthread_join(tids[i], NULL);
-    }
-
-    // 销毁互斥锁
-    pthread_mutex_destroy(&lock);
-
     close(sockfd);
-
     return 0;
 }
 
