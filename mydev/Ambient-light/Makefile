@@ -1,5 +1,5 @@
 arch ?= arm
-modname ?= led
+modname ?= ap3216
 cc := arm-none-linux-gnueabihf-gcc
 
 ifeq ($(arch),arm)
