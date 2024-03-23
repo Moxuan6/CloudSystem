@@ -1,7 +1,4 @@
 #include "../include/myhead.h"
-#include <pthread.h>
-
-#define MAX_THREADS 100
 
 /*根据用户设置的阈值维护恒定环境线程*/
 void *hold_envthread(void *argv);
