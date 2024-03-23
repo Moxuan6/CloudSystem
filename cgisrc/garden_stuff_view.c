@@ -1,6 +1,6 @@
 #include "../include/myhead.h"
 
-long rettype;	//消息队列接收类型
+long long rettype;	//消息队列接收类型
 
 void handler(int argc)
 {
@@ -43,7 +43,7 @@ int cgiMain(int argc, const char *argv[])
 		s++;	
 	}
 	s++;
-	long msgtype = 0;
+	long long msgtype = 0;
 	int i = 0;
 	memset(&msg,0,sizeof(msg_t));
 	while(*s){
@@ -65,6 +65,7 @@ int cgiMain(int argc, const char *argv[])
 	memset(&msg,0,sizeof(msg_t));
 	msgrcv(msgid,&msg,sizeof(msg_t)-sizeof(long),rettype,0);
 
+	msg.user.flags = 1;
 	if( 1 == msg.user.flags){
 		printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
 		printf("<!DOCTYPE html>");

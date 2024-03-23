@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "module.h": "c",
-        "device.h": "c",
-        "array": "c",
-        "string": "c",
-        "string_view": "c"
-    }
-}
