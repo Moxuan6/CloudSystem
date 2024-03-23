@@ -203,12 +203,13 @@ void *getenv_thpread(void *arg)
     buf.envdata.temp = 30.5;
     buf.envdata.hume = 100;
     buf.envdata.lux = 200;
-    buf.envdata.devstatus = 0x01;
+    buf.envdata.devstatus = 0x01 | 0x02 | 0x08;
 
     //打印环境数据
-    printf("temp=%.2f\n", buf.envdata.temp);
-    printf("hume=%hhu%%\n", buf.envdata.hume);
-    printf("lux=%hhu\n", buf.envdata.lux);
+    printf("temp=%f\n", buf.envdata.temp);
+    printf("hume=%d\n", buf.envdata.hume);
+    printf("lux=%hu\n", buf.envdata.lux);
+    printf("devstatus=%hhu\n", buf.envdata.devstatus);
 
     //返回环境数据结果
     if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
