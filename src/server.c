@@ -132,34 +132,57 @@ int main(int argc, char const *argv[])
 void *handl_thread(void *argv)
 {
     int accept_fd = *(int *)argv;
+    char ID[] = "admin";
+    char PS[] = "123456";
+    long recvmsgtype, sendmsgtype;  // 消息队列接收类型
     msg_t buf;
     int ret;
 
-    while (1) {
-        memset(&buf, 0, sizeof(buf));
+    /*处理登录*/
+    if(0 == recv(accept_fd, &buf, sizeof(buf), 0)){
+        perror("fail to recv");
+        close(accept_fd);
+        pthread_exit(NULL);
+    }
 
-        // 接收数据
-        if (-1 == (ret = recv(accept_fd, &buf, sizeof(buf), 0))) {
-            perror("fail to recv");
-            close(accept_fd);
-            delete_link(head, accept_fd); // 删除链表中的节点
-            pthread_exit(NULL);
-        } else if (ret == 0) {
-            printf("client close\n");
-            close(accept_fd);
-            delete_link(head, accept_fd); // 删除链表中的节点
-            pthread_exit(NULL);
+    printf("ID:%s\n", buf.user.username);
+
+    if( 0 == strcmp(buf.user.username, ID) && 0 == strcmp(buf.user.password, PS)){
+        buf.user.flags = 1;     // 成功
+        recvmsgtype = 1;        // 接收消息类型
+        int i = 0;
+        while(buf.user.username[i] != '\0'){
+            recvmsgtype += buf.user.username[i];   // 计算接收消息类型
+            i++;
         }
+        sendmsgtype = recvmsgtype * 2;  // 发送消息类型
+        printf("等待的消息类型为%ld,发送的消息类型为%ld\n",recvmsgtype,sendmsgtype);
+        send(accept_fd, &buf, sizeof(msg_t), 0);
+        insert_link(head, buf.user.username, accept_fd);    // 插入链表
 
-        // 打印数据
-        printf("下位机:%s fd: %d 已连接...\n", buf.user.username, accept_fd);
-
-        // 判断消息类型
-        switch (buf.msgtype) {
-        case 1: // 登录
-            insert_link(head, buf.user.username, accept_fd);
-            break;
+        while(1){
+            memset(&buf, 0, sizeof(msg_t));
+            // 等待消息
+            msgrcv(msgid, &buf, sizeof(msg_t) - sizeof(long), recvmsgtype, 0);
+            // 发送消息
+            send(accept_fd, &buf, sizeof(msg_t), 0);
+            // 等待结果
+            if(0 == recv(accept_fd, &buf, sizeof(msg_t), 0)){
+                perror("fail to recv");
+                close(accept_fd);
+                delete_link(head, accept_fd); // 删除链表中的节点
+                pthread_exit(NULL);
+            }
+            // 返回结果
+            buf.msgtype = sendmsgtype;  // 发送消息类型
+            msgsnd(msgid, &buf, sizeof(msg_t) - sizeof(long), 0);
         }
+    }else{
+        printf("登录失败\n");
+        buf.user.flags = 0;     // 失败
+        send(accept_fd, &buf, sizeof(msg_t), 0);
+        close(accept_fd);
+        pthread_exit(NULL);
     }
 }
 
@@ -193,7 +216,7 @@ void *login_thread(void *argv)
     }
 }
 
-// 创建链表
+/*创建链表*/
 link_t *create_link()
 {
     link_t *head = (link_t *)malloc(sizeof(link_t));
@@ -206,7 +229,7 @@ link_t *create_link()
     return head;
 }
 
-// 增加数据
+/*增加数据*/
 void insert_link(link_t *head, const char *ID, int fd)
 {
     if (head == NULL || ID == NULL) {
@@ -224,7 +247,7 @@ void insert_link(link_t *head, const char *ID, int fd)
     head->next = p;
 }
 
-// 根据ID查找
+/*根据ID查找*/
 int find_link(link_t *head, const char *ID)
 {
     if (head == NULL || ID == NULL) {
@@ -241,7 +264,7 @@ int find_link(link_t *head, const char *ID)
     return -1;
 }
 
-// 根据fd删除
+/*根据fd删除*/
 void delete_link(link_t *head, int fd)
 {
     if (head == NULL || fd < 0) {
@@ -262,7 +285,7 @@ void delete_link(link_t *head, int fd)
     }
 }
 
-// 销毁链表
+/*销毁链表*/
 void destroy_link(link_t **head)
 {
     if (head == NULL || *head == NULL) {

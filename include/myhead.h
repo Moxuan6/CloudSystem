@@ -16,12 +16,16 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sqlite3.h>
-
 #include "cgic.h"
 
-#define MSGPATH "/home/jeremy/"
+#define MSGPATH "/home/jeremy/" //消息队列路径
+
+key_t key;          //消息队列 key
+int msgid;          //消息队列 id
+pthread_t tid;      //线程ID
 
 /* 统一数据结构 */
+/* 登录数据 */
 typedef struct {
     char username[32];
     char password[32];
@@ -33,7 +37,7 @@ typedef struct{
     float temp;                 // 温度
     unsigned char hume;         // 湿度
     unsigned char lux;          // 光照
-    unsigned char devstatus;    // 设备状态
+    unsigned char devstatus;    // 0-7bit 0照明  1-2温控挡位(00==off 01==1挡 10==2挡 11=3挡) 3加湿 
 } env_t;
 
 /* 设置阈值数据 */
@@ -56,6 +60,8 @@ typedef struct {
     char devctrl;
 } msg_t;
 
+msg_t msg;          //消息结构体
+
 /* 链表节点 */
 typedef struct node{
     char ID[32];
@@ -63,11 +69,7 @@ typedef struct node{
     struct node *next;
 }link_t;
 
-msg_t msg;
-key_t key;
-int msgid;
-link_t *head;
-pthread_t tid;
+link_t *head;       //链表头指针
 
 /* 信号处理 */
 void sig_handler(int signo);
