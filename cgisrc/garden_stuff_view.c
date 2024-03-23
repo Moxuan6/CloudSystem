@@ -1,6 +1,6 @@
 #include "../include/myhead.h"
 
-long rettype = 0;	//消息队列接收类型
+long rettype;	//消息队列接收类型
 
 void handler(int argc)
 {
@@ -34,21 +34,24 @@ int cgiMain(int argc, const char *argv[])
 	/*注册alarm信号*/
 	signal(SIGALRM,handler);
 	
-	char name[128] ={0};
-	    memcpy(name,cgiCookie,128);
-    char *s=name;
-    while(*s!='='){
-        s++;
-    }
-    s=s+1;
-    int msgtype=0;
-    char buf[120]={0};//登录的用户ID
-    int i=0;
-    while(*s){
-        buf[i]=*s;
-        i++;
-        s++;
-    }
+	char name[128] = {0};
+	memcpy(name,cgiCookie,128);
+	char *s = name;
+	char buf[128] = {0};
+
+	while(*s!='='){
+		s++;	
+	}
+	s++;
+	long msgtype = 0;
+	int i = 0;
+	memset(&msg,0,sizeof(msg_t));
+	while(*s){
+		buf[i] = *s;
+		msg.msgtype+=*s;
+		s++;
+		i++;
+	}
 
 	/*封装消息*/
 	rettype = msg.msgtype * 2;
@@ -91,7 +94,7 @@ int cgiMain(int argc, const char *argv[])
 		printf("<th bgcolor=\"#00FFFF\">湿控</th>");
 		printf("<tr>");
 
-		/*解析设备状态*/
+		/*设备状态甄别显示*/
 		if(msg.envdata.devstatus & 0x01){
 			printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">开</td>");
 		}else{
@@ -99,7 +102,7 @@ int cgiMain(int argc, const char *argv[])
 		}
 
 		/*解析温控状态*/
-		switch(msg.envdata.devstatus & 0x03 << 1){ 
+		switch(msg.envdata.devstatus & 0x3 << 1){ 
 			case 0:
 				printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">关</td>");
 				break;
@@ -117,7 +120,7 @@ int cgiMain(int argc, const char *argv[])
 		}
 
 		/*解析湿控状态*/
-		if(msg.envdata.devstatus & 0x01 << 3){
+		if(msg.envdata.devstatus & 0x1 << 3){
 			printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">开</td>");
 		}else{
 			printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">关</td>");
@@ -132,13 +135,14 @@ int cgiMain(int argc, const char *argv[])
 		printf("</center>");
 		printf("</body>");
 		printf("</html>");
+
 	} else {
 		printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
 		printf("<!DOCTYPE html>");
 		printf("<html>");
 		printf("<body bgcolor=\"#00FFFF\">");
 		printf("<center>");
-		printf("<h4>网络原因导致数据不可达，请稍后重试</h4>");
+		printf("<h4>网络原因导致数据不可达，请稍后重试2</h4>");
 		printf("</center>");
 		printf("</body>");
 		printf("</html>");

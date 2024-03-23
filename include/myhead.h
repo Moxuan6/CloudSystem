@@ -36,7 +36,7 @@ typedef struct {
 typedef struct{
     float temp;                 // 温度
     unsigned char hume;         // 湿度
-    unsigned char lux;          // 光照
+    unsigned short lux;         // 光照
     unsigned char devstatus;    // 0-7bit 0照明  1-2温控挡位(00==off 01==1挡 10==2挡 11=3挡) 3加湿 
 } env_t;
 
@@ -46,12 +46,12 @@ typedef struct{
     float tempdown;             // 温度下限
     unsigned char humeup;       // 湿度上限
     unsigned char humedown;     // 湿度下限
-    unsigned char luxup;        // 光照上限
-    unsigned char luxdown;      // 光照下限
+    unsigned short luxup;        // 光照上限
+    unsigned short luxdown;      // 光照下限
 } limitset_t;
 
 typedef struct {
-    long long msgtype;
+    long msgtype;
     char commd;
     user_t user;
     env_t envdata;
@@ -61,6 +61,19 @@ typedef struct {
 } msg_t;
 
 msg_t msg;          //消息结构体
+
+/*采集到的数据缓冲变量*/
+float conttemp;
+unsigned char conthume;
+unsigned short contlux;
+
+/*用户设置的参考变量*/
+float settempup;
+float settempdown;
+unsigned char sethumeup;
+unsigned char sethumedown;
+unsigned short setluxup;
+unsigned short setluxdown;
 
 /* 链表节点 */
 typedef struct node{

@@ -109,11 +109,13 @@ int main(int argc, char const *argv[])
 
     while (1) {
         // 接受客户端连接
-        if (1 == (accept_fd = accept(sockfd, (struct sockaddr *)&client_addr, &addrlen))) {
+        if (-1 == (accept_fd = accept(sockfd, (struct sockaddr *)&client_addr, &addrlen))) {
             perror("fail to accept");
             msgctl(msgid, IPC_RMID, NULL); // 删除消息队列
             exit(-1);
         }
+
+        puts("有下位机连接成功");
 
         // 创建处理线程
         if (pthread_create(&tid, NULL, handl_thread, &accept_fd) != 0) {
@@ -149,26 +151,34 @@ void *handl_thread(void *argv)
 
     if( 0 == strcmp(buf.user.username, ID) && 0 == strcmp(buf.user.password, PS)){
         buf.user.flags = 1;     // 成功
-        recvmsgtype = 1;        // 接收消息类型
+        recvmsgtype = 0;        // 接收消息类型
         int i = 0;
         while(buf.user.username[i] != '\0'){
             recvmsgtype += buf.user.username[i];   // 计算接收消息类型
             i++;
         }
+        
         sendmsgtype = recvmsgtype * 2;  // 发送消息类型
         printf("等待的消息类型为%ld,发送的消息类型为%ld\n",recvmsgtype,sendmsgtype);
         send(accept_fd, &buf, sizeof(msg_t), 0);
+        
         insert_link(head, buf.user.username, accept_fd);    // 插入链表
 
         while(1){
             memset(&buf, 0, sizeof(msg_t));
             // 等待消息
             msgrcv(msgid, &buf, sizeof(msg_t) - sizeof(long), recvmsgtype, 0);
-            // 发送消息
-            send(accept_fd, &buf, sizeof(msg_t), 0);
-            // 等待结果
-            if(0 == recv(accept_fd, &buf, sizeof(msg_t), 0)){
-                perror("fail to recv");
+            
+            send(accept_fd, &buf, sizeof(msg_t), 0);        // 发送消息
+
+            ret = recv(accept_fd, &buf, sizeof(msg_t), 0);  // 接收消息
+            if(ret <= 0){
+                if (ret == 0) {
+                    // 客户端关闭了连接
+                    printf("Client closed connection\n");
+                } else {
+                    perror("fail to recv");
+                }
                 close(accept_fd);
                 delete_link(head, accept_fd); // 删除链表中的节点
                 pthread_exit(NULL);
@@ -182,7 +192,7 @@ void *handl_thread(void *argv)
         buf.user.flags = 0;     // 失败
         send(accept_fd, &buf, sizeof(msg_t), 0);
         close(accept_fd);
-        pthread_exit(NULL);
+        pthread_exit(NULL);     // 退出线程
     }
 }
 
