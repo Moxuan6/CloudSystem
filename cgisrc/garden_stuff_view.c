@@ -86,8 +86,8 @@ int cgiMain(int argc, const char *argv[])
 		printf("<th bgcolor=\"#00FFFF\">光强</th>");
 		printf("<tr>");
 		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">%.2f</td>",msg.envdata.temp);
-		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">%hhd%%</td>",msg.envdata.hume);
-		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">%hdlux</td>",msg.envdata.lux);
+		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">%.2f%%</td>",msg.envdata.hume);
+		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">%.2flux</td>",msg.envdata.lux);
 		printf("</tr>");
 		printf("</table>");
 		printf("<h4>设备状态</h4>");

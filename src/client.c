@@ -149,10 +149,10 @@ void *hold_envthread(void *arg)
     //fscanf(文件指针, "格式化字符串", 参数列表), %hhu 无符号字符
     fscanf(fp, "tempup=%f\n", &settempup);
     fscanf(fp, "tempdown=%f\n", &settempdown);
-    fscanf(fp, "humeup=%hhu\n", &sethumeup);
-    fscanf(fp, "humedown=%hhu\n", &sethumedown);
-    fscanf(fp, "luxup=%hu\n", &setluxup);
-    fscanf(fp, "luxdown=%hu\n", &setluxdown);
+    fscanf(fp, "humeup=%f\n", &sethumeup);
+    fscanf(fp, "humedown=%f\n", &sethumedown);
+    fscanf(fp, "luxup=%f\n", &setluxup);
+    fscanf(fp, "luxdown=%f\n", &setluxdown);
 
     fclose(fp);
 
@@ -244,8 +244,8 @@ void *getenv_thpread(void *arg)
 
     // 将获取到的环境数据赋值给buf.envdata
     buf.envdata.temp = tmp_f;
-    buf.envdata.hume = (unsigned char)hum_f;
-    buf.envdata.lux = (unsigned short)lux;
+    buf.envdata.hume = hum_f;
+    buf.envdata.lux = lux;
 
     // 将数据存到缓存变量中
     conttemp = buf.envdata.temp;
@@ -288,12 +288,12 @@ void *setlimit_thread(void *arg)
 
     fprintf(fp, "tempup=%f\n", settempup);
     fprintf(fp, "tempdown=%f\n", settempdown);
-    fprintf(fp, "humeup=%hhu\n", sethumeup);
-    fprintf(fp, "humedown=%hhu\n", sethumedown);
-    fprintf(fp, "luxup=%hhu\n", setluxup);
-    fprintf(fp, "luxdown=%hhu\n", setluxdown);
+    fprintf(fp, "humeup=%f\n", sethumeup);
+    fprintf(fp, "humedown=%f\n", sethumedown);
+    fprintf(fp, "luxup=%f\n", setluxup);
+    fprintf(fp, "luxdown=%f\n", setluxdown);
 
-    printf("温度上限=%.2f 温度下限=%.2f 湿度上限=%hhu 湿度下限=%hhu 光照上限=%hu 光照下限=%hu\n", 
+    printf("温度上限=%.2f 温度下限=%.2f 湿度上限=%.2f 湿度下限=%.2f 光照上限=%.2f 光照下限=%.2f\n", 
         settempup, settempdown, sethumeup, sethumedown, setluxup, setluxdown);
 
 	//将执行结果返回给服务器
