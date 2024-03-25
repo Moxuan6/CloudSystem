@@ -84,6 +84,7 @@ int main(int argc, char const *argv[])
             switch(msg.commd){
                 case 1:
                     /*获取环境数据*/
+                    puts("获取环境数据");
                     if (pthread_create(&tid, NULL, getenv_thpread, &sockfd) != 0) {
                         perror("fail to create thread");
                         exit(-1);
@@ -91,6 +92,7 @@ int main(int argc, char const *argv[])
                     break;
                 case 2:
                     /*设置阈值*/
+                    puts("设置阈值");
                     if (pthread_create(&tid, NULL, setlimit_thread, &sockfd) != 0) {
                         perror("fail to create thread");
                         exit(-1);
@@ -98,6 +100,7 @@ int main(int argc, char const *argv[])
                     break;
                 case 3:
                     /*控制设备*/
+                    puts("控制设备");
                     if (pthread_create(&tid, NULL, ctrldev_thread, &sockfd) != 0) {
                         perror("fail to create thread");
                         exit(-1);
