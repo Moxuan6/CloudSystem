@@ -1,6 +1,0 @@
-tempup=50.5
-tempdown=-5.5
-humeup=100
-humedown=50
-luxup=300
-luxdown=70

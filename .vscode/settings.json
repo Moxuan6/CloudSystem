@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "myhead.h": "c"
+        "myhead.h": "c",
+        "cerrno": "c",
+        "ioctl.h": "c"
     }
 }

@@ -68,8 +68,6 @@ int cgiMain(int argc, const char *argv[])
 	memset(&msg,0,sizeof(msg_t));
 	msgrcv(msgid, &msg, sizeof(msg_t)-sizeof(long), rettype, 0);
 
-	msg.user.flags = 1;
-
 	if( 1 == msg.user.flags){
 		printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
 		printf("<!DOCTYPE html>");

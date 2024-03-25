@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/errno.h>
 
 #define PRINT_ERR(msg) do { perror(msg); exit(1); } while (0)
 
@@ -58,6 +59,14 @@ int main(int argc, char const *argv[])
         exit(-1);
     }
 
+    // 判断是否登录成功
+    if(1 == msg.user.flags){
+        printf("login success\n");
+    } else {
+        printf("login fail\n");
+        return -1;
+    }
+
     if( 1 == msg.user.flags){
         /*创建维护环境线程*/
 		pthread_create(&tid,NULL,hold_envthread,NULL);
@@ -67,8 +76,8 @@ int main(int argc, char const *argv[])
             memset(&msg,0,sizeof(msg));
             
             // 接收上位机的指令
-            if(0 == recv(sockfd,&msg,sizeof(msg),0)){
-                perror("fail to recv");
+            if (0 == recv(sockfd, &msg, sizeof(msg), 0)) {
+                printf("Server closed the connection. Exiting.\n");
                 exit(-1);
             }
 
@@ -129,76 +138,76 @@ int client_network_init(int sockfd, struct sockaddr_in *addr, const char *ip, in
 void *hold_envthread(void *arg)
 {
     msg_t buf;
-	//读取参考文件数据赋值给参考变量
+	
+    //读取参考文件数据赋值给参考变量
+    FILE *fp = fopen("init.txt", "r");
+    if (fp == NULL) {
+        perror("fail to fopen");
+        exit(-1);
+    }
 
-    // //读取参考文件数据
-    // FILE *fp = fopen("init.txt", "r");
-    // if (fp == NULL) {
-    //     perror("fail to fopen");
-    //     exit(-1);
-    // }
+    //fscanf(文件指针, "格式化字符串", 参数列表), %hhu 无符号字符
+    fscanf(fp, "tempup=%f\n", &settempup);
+    fscanf(fp, "tempdown=%f\n", &settempdown);
+    fscanf(fp, "humeup=%hhu\n", &sethumeup);
+    fscanf(fp, "humedown=%hhu\n", &sethumedown);
+    fscanf(fp, "luxup=%hu\n", &setluxup);
+    fscanf(fp, "luxdown=%hu\n", &setluxdown);
 
-    // //fscanf(文件指针, "格式化字符串", 参数列表), %hhu 无符号字符
-    // fscanf(fp, "tempup=%f\n", &buf.limitset.tempup);
-    // fscanf(fp, "tempdown=%f\n", &buf.limitset.tempdown);
-    // fscanf(fp, "humeup=%hhu\n", &buf.limitset.humeup);
-    // fscanf(fp, "humedown=%hhu\n", &buf.limitset.humedown);
-    // fscanf(fp, "luxup=%hu\n", &buf.limitset.luxup);
-    // fscanf(fp, "luxdown=%hu\n", &buf.limitset.luxdown);
+    fclose(fp);
 
-    // //打印参考变量数据
-    // printf("tempup=%f\n", buf.limitset.tempup);
-    // printf("tempdown=%f\n", buf.limitset.tempdown);
-    // printf("humeup=%hhu\n", buf.limitset.humeup);
-    // printf("humedown=%hhu\n", buf.limitset.humedown);
-    // printf("luxup=%hu\n", buf.limitset.luxup);
-    // printf("luxdown=%hu\n", buf.limitset.luxdown);
+    //将参考变量数据赋值给参考变量
+    buf.limitset.tempup = settempup;
+    buf.limitset.tempdown = settempdown;
+    buf.limitset.humeup = sethumeup;
+    buf.limitset.humedown = sethumedown;
+    buf.limitset.luxup = setluxup;
+    buf.limitset.luxdown = setluxdown;
 
-    // fclose(fp);
+    //打印参考变量数据
+    printf("温度上限=%.2f\n", buf.limitset.tempup);
+    printf("温度下限=%.2f\n", buf.limitset.tempdown);
+    printf("湿度上限=%hhu\n", buf.limitset.humeup);
+    printf("湿度下限=%hhu\n", buf.limitset.humedown);
+    printf("光照上限=%hu\n", buf.limitset.luxup);
+    printf("光照下限=%hu\n", buf.limitset.luxdown);
 
 	while(1){
-	// 	//读取环境数据
-    //    // 先模拟环境数据
-    //     buf.envdata.temp = 30.5;
-    //     buf.envdata.hume = 30;
-    //     buf.envdata.lux = 20;
-    //     buf.envdata.devstatus = 0x01;
+        //根据环境数据与参考值比较，决定是否开启对应的设备
+        //判断温度是否超过上限
+        if(conttemp > buf.limitset.tempup){
+            //开启风扇设备
+            // buf.envdata.devstatus |= 0x02;
+            printf("温度过高，风扇开启\n");
+        }else if(conttemp < buf.limitset.tempdown){
+            //关闭风扇设备
+            // buf.envdata.devstatus &= ~0x02;
+            printf("温度过低，风扇关闭\n");
+        }
 
-    //     //根据环境数据与参考值比较，决定是否开启对应的设备
-    //     //判断温度是否超过上限
-    //     if(buf.envdata.temp > buf.limitset.tempup){
-    //         //开启风扇设备
-    //         buf.envdata.devstatus |= 0x02;
-    //         printf("风扇开启\n");
-    //     }else if(buf.envdata.temp < buf.limitset.tempdown){
-    //         //关闭风扇设备
-    //         buf.envdata.devstatus &= ~0x02;
-    //         printf("风扇关闭\n");
-    //     }
+        //判断湿度是否超过上限
+        if(conthume > buf.limitset.humeup){
+            //开启蜂鸣器设备
+            // buf.envdata.devstatus |= 0x08;
+            printf("湿度过高，蜂鸣器开启\n");
+        }else if(conthume < buf.limitset.humedown){
+            //关闭蜂鸣器设备
+            // buf.envdata.devstatus &= ~0x08;
+            printf("湿度过低，蜂鸣器关闭\n");
+        }
 
-    //     //判断湿度是否超过上限
-    //     if(buf.envdata.hume > buf.limitset.humeup){
-    //         //开启蜂鸣器设备
-    //         buf.envdata.devstatus |= 0x08;
-    //         printf("蜂鸣器开启\n");
-    //     }else if(buf.envdata.hume < buf.limitset.humedown){
-    //         //关闭蜂鸣器设备
-    //         buf.envdata.devstatus &= ~0x08;
-    //         printf("蜂鸣器关闭\n");
-    //     }
-
-    //     //判断光照是否超过上限
-    //     if(buf.envdata.lux > buf.limitset.luxup){
-    //         //开启LED设备
-    //         buf.envdata.devstatus |= 0x01;
-    //         printf("LED开启\n");
-    //     }else if(buf.envdata.lux < buf.limitset.luxdown){
-    //         //关闭LED设备
-    //         buf.envdata.devstatus &= ~0x01;
-    //         printf("LED关闭\n");
-    //     }
-	// 	//休眠一段时间继续工作
-    //     sleep(50);
+        //判断光照是否超过上限
+        if(contlux > buf.limitset.luxup){
+            //开启LED设备
+            // buf.envdata.devstatus |= 0x01;
+            printf("光强过高，LED关闭\n");
+        }else if(contlux < buf.limitset.luxdown){
+            //关闭LED设备
+            // buf.envdata.devstatus &= ~0x01;
+            printf("光强过低，LED打开\n");
+        }
+		//休眠一段时间继续工作
+        sleep(50);
 	}
 }
 
@@ -208,7 +217,6 @@ void *getenv_thpread(void *arg)
    	msg_t buf;
     int sockfd = *(int *)arg;
 
-
     int fd, tmp, hum;
     float tmp_f, hum_f;
     unsigned short als_data; // 光照传感器是16位ADC
@@ -216,7 +224,6 @@ void *getenv_thpread(void *arg)
 
     if ((fd = open("/dev/si7006", O_RDWR)) == -1)
         PRINT_ERR("open error");
-
     if (ioctl(fd, GET_TMP, &tmp) == -1)
         PRINT_ERR("ioctl error");
     if (ioctl(fd, GET_HUM, &hum) == -1)
@@ -227,7 +234,7 @@ void *getenv_thpread(void *arg)
     hum_f = 125.0 * hum / 65536 - 6;
     tmp_f = 175.72 * tmp / 65536 - 46.85;
 
-    if((fd = open("/dev/ap3216",O_RDWR))==-1)
+    if((fd = open("/dev/ap3216",O_RDWR)) == -1)
         PRINT_ERR("open error");
 
     read(fd, &als_data, sizeof(als_data));
@@ -235,18 +242,19 @@ void *getenv_thpread(void *arg)
 
     close(fd);
 
-    // 模拟读取 sensor 检测到的环境数据
+    // 将获取到的环境数据赋值给buf.envdata
     buf.envdata.temp = tmp_f;
-    buf.envdata.hume = hum_f;
-    buf.envdata.lux = lux;
+    buf.envdata.hume = (unsigned char)hum_f;
+    buf.envdata.lux = (unsigned short)lux;
+
+    // 将数据存到缓存变量中
+    conttemp = buf.envdata.temp;
+    conthume = buf.envdata.hume;
+    contlux = buf.envdata.lux;
     
     buf.envdata.devstatus = 0x01 | 0x02 | 0x08; // 0000 0001 | 0000 0010 | 0000 1000 = 0000 1011
-
-    //打印环境数据
-    printf("temp=%.2f\n", buf.envdata.temp);
-    printf("hume=%.2f\n", buf.envdata.hume);
-    printf("lux=%hu\n", buf.envdata.lux);
-    printf("devstatus=%hhu\n", buf.envdata.devstatus);
+    
+    buf.user.flags = 1; //  告诉服务器获取环境数据成功
 
     //返回环境数据结果
     if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
@@ -261,79 +269,84 @@ void *getenv_thpread(void *arg)
 void *setlimit_thread(void *arg)
 {
     msg_t buf;
-    // int sockfd = *(int *)arg;
-	// //将 buf.limitset字段中的数据赋值给参考变量
+    int sockfd = *(int *)arg;
+	//将 buf.limitset字段中的数据赋值给参考变量
+
+    settempup = buf.limitset.tempup;
+    settempdown = buf.limitset.tempdown;
+    sethumeup = buf.limitset.humeup;
+    sethumedown = buf.limitset.humedown;
+    setluxup = buf.limitset.luxup;
+    setluxdown = buf.limitset.luxdown;
     
-    // //将参考变量数据写入到文件中
-    // FILE *fp = fopen("init.txt", "w");
-    // if (fp == NULL) {
-    //     perror("fail to fopen");
-    //     exit(-1);
-    // }
+    //将参考变量数据写入到文件中
+    FILE *fp = fopen("init.txt", "w");
+    if (fp == NULL) {
+        perror("fail to fopen");
+        exit(-1);
+    }
 
-    // fprintf(fp, "tempup=%f\n", buf.limitset.tempup);
-    // fprintf(fp, "tempdown=%f\n", buf.limitset.tempdown);
-    // fprintf(fp, "humeup=%hhu\n", buf.limitset.humeup);
-    // fprintf(fp, "humedown=%hhu\n", buf.limitset.humedown);
-    // fprintf(fp, "luxup=%hhu\n", buf.limitset.luxup);
-    // fprintf(fp, "luxdown=%hhu\n", buf.limitset.luxdown);
+    fprintf(fp, "tempup=%f\n", settempup);
+    fprintf(fp, "tempdown=%f\n", settempdown);
+    fprintf(fp, "humeup=%hhu\n", sethumeup);
+    fprintf(fp, "humedown=%hhu\n", sethumedown);
+    fprintf(fp, "luxup=%hhu\n", setluxup);
+    fprintf(fp, "luxdown=%hhu\n", setluxdown);
 
-    // fclose(fp);
+    printf("温度上限=%.2f 温度下限=%.2f 湿度上限=%hhu 湿度下限=%hhu 光照上限=%hu 光照下限=%hu\n", 
+        settempup, settempdown, sethumeup, sethumedown, setluxup, setluxdown);
 
+	//将执行结果返回给服务器
+    if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
+        perror("fail to send");
+        exit(-1);
+    }
 
-	// //将参考变量数据写入到文件中，方便设备下次启动时有一个合理的参考值
-
-	// //将执行结果返回给服务器
-    // if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
-    //     perror("fail to send");
-    //     exit(-1);
-    // }
-
-    // pthread_exit(NULL);
+    fclose(fp);
+    pthread_exit(NULL);
 }
 
 /*控制设备线程*/
 void *ctrldev_thread(void *arg)
 {
     msg_t buf;
-    // int sockfd = *(int *)arg;
-    // // 根据 buf 中devctrl 字段对应的位，控制设备的启停操作
-    
-    // if(buf.devctrl & 0x01){
-    //     //开启LED设备
-    //     buf.envdata.devstatus |= 0x01;
-    //     printf("LED开启\n");
-    // }else{
-    //     //关闭LED设备
-    //     buf.envdata.devstatus &= ~0x01;
-    //     printf("LED关闭\n");
-    // }
+    int sockfd = *(int *)arg;
 
-    // if(buf.devctrl & 0x02){
-    //     //开启风扇设备
-    //     buf.envdata.devstatus |= 0x02;
-    //     printf("风扇开启\n");
-    // }else{
-    //     //关闭风扇设备
-    //     buf.envdata.devstatus &= ~0x02;
-    //     printf("风扇关闭\n");
-    // }
+    if(buf.devctrl & 0x01){
+        //开启LED设备
+        // buf.envdata.devstatus |= 0x01;
+        printf("LED开启\n");
+    }else{
+        //关闭LED设备
+        // buf.envdata.devstatus &= ~0x01;
+        printf("LED关闭\n");
+    }
 
-    // if(buf.devctrl & 0x04){
-    //     //开启蜂鸣器设备
-    //     buf.envdata.devstatus |= 0x08;
-    //     printf("蜂鸣器开启\n");
-    // }else{
-    //     //关闭蜂鸣器设备
-    //     buf.envdata.devstatus &= ~0x08;
-    //     printf("蜂鸣器关闭\n");
-    // }
+    if( buf.devctrl & 0x02){
+        //开启风扇设备
+        // buf.envdata.devstatus |= 0x02;
+        printf("风扇开启\n");
+    }else{
+        //关闭风扇设备
+        // buf.envdata.devstatus &= ~0x02;
+        printf("风扇关闭\n");
+    }
 
-    // // 返回执行结果
-    // if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
-    //     perror("fail to send");
-    //     exit(-1);
-    // }
+    if(buf.devctrl & 0x04){
+        //开启蜂鸣器设备
+        // buf.envdata.devstatus |= 0x08;
+        printf("蜂鸣器开启\n");
+    }else{
+        //关闭蜂鸣器设备
+        // buf.envdata.devstatus &= ~0x08;
+        printf("蜂鸣器关闭\n");
+    }
 
-    // pthread_exit(NULL);
+    // 返回执行结果
+    if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
+        perror("fail to send");
+        exit(-1);
+    }
+
+    pthread_exit(NULL);
 }
