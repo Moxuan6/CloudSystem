@@ -240,7 +240,7 @@ void *getenv_thpread(void *arg)
     buf.envdata.hume = hum_f;
     buf.envdata.lux = lux;
     
-    buf.envdata.devstatus = 0x01 | 0x02 | 0x08; // 0000 0001 | 0000 0010 | 0000 1000
+    buf.envdata.devstatus = 0x01 | 0x02 | 0x08; // 0000 0001 | 0000 0010 | 0000 1000 = 0000 1011
 
     //打印环境数据
     printf("temp=%.2f\n", buf.envdata.temp);
