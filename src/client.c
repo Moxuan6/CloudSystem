@@ -167,10 +167,10 @@ void *hold_envthread(void *arg)
     //打印参考变量数据
     printf("温度上限=%.2f\n", buf.limitset.tempup);
     printf("温度下限=%.2f\n", buf.limitset.tempdown);
-    printf("湿度上限=%hhu\n", buf.limitset.humeup);
-    printf("湿度下限=%hhu\n", buf.limitset.humedown);
-    printf("光照上限=%hu\n", buf.limitset.luxup);
-    printf("光照下限=%hu\n", buf.limitset.luxdown);
+    printf("湿度上限=%.2f\n", buf.limitset.humeup);
+    printf("湿度下限=%.2f\n", buf.limitset.humedown);
+    printf("光照上限=%.2f\n", buf.limitset.luxup);
+    printf("光照下限=%.2f\n", buf.limitset.luxdown);
 
 	while(1){
         //根据环境数据与参考值比较，决定是否开启对应的设备
