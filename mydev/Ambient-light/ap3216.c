@@ -125,7 +125,7 @@ int ap3216_probe(struct i2c_client* client, const struct i2c_device_id* id)
 
     // 设置ALS Gain为范围4
     // Range 4 (B5B4=’11’): 0 ~ 323 Lux. Resolution = 0.0049 lux/count
-    i2c_write_reg(0x10, 0x30);
+    i2c_write_reg(0x10, 0x11);
 
     // 2.注册字符设备驱动
     major = register_chrdev(0, CNAME, &fops);
