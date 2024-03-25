@@ -310,8 +310,6 @@ void *getenv_thpread(void *arg)
     contlux = buf.envdata.lux;
     
     buf.envdata.devstatus = 0x01 | 0x02 | 0x08; // 0000 0001 | 0000 0010 | 0000 1000 = 0000 1011
-    
-    buf.user.flags = 1; //  告诉服务器获取环境数据成功
 
     //返回环境数据结果
     if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
