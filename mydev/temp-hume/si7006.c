@@ -55,11 +55,12 @@ int i2c_read_tmp_hum(u8 reg)
     }
     return (data >> 8 | data << 8);
 }
+
 int si7006_open(struct inode* inode, struct file* filp)
 {
-    printk("%s:%s:%d\n", __FILE__, __func__, __LINE__);
     return 0;
 }
+
 long si7006_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
 {
     int data = 0, ret;
@@ -95,16 +96,18 @@ long si7006_ioctl(struct file* file, unsigned int cmd, unsigned long arg)
     }
     return 0;
 }
+
 int si7006_release(struct inode* inode, struct file* filp)
 {
-    printk("%s:%s:%d\n", __FILE__, __func__, __LINE__);
     return 0;
 }
+
 struct file_operations fops = {
     .open = si7006_open,
     .unlocked_ioctl = si7006_ioctl,
     .release = si7006_release,
 };
+
 int si7006_probe(struct i2c_client* client, const struct i2c_device_id* id)
 {
     gclient = client;

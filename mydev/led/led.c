@@ -84,7 +84,6 @@ void myleds_uninit_value(int* no)
 }
 int myleds_open(struct inode* inode, struct file* file)
 {
-    printk("%s:%s:%d\n", __FILE__, __func__, __LINE__);
     return 0;
 }
 void led_set_value(int which, int status)
@@ -136,7 +135,6 @@ long myleds_ioctl(struct file* file,
 }
 int myled_close(struct inode* inode, struct file* file)
 {
-    printk("%s:%s:%d\n", __FILE__, __func__, __LINE__);
     return 0;
 }
 struct file_operations fops = {

@@ -69,7 +69,6 @@ int i2c_read_reg(u8 reg)
 
 int ap3216_open(struct inode* inode, struct file* filp)
 {
-    printk("%s:%s:%d\n", __FILE__, __func__, __LINE__);
     return 0;
 }
 
@@ -100,7 +99,6 @@ ssize_t ap3216_read(struct file* filp, char __user* ubuf,
 
 int ap3216_close(struct inode* inode, struct file* filp)
 {
-    printk("%s:%s:%d\n", __FILE__, __func__, __LINE__);
     return 0;
 }
 
