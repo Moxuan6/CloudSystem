@@ -138,15 +138,20 @@ int client_network_init(int sockfd, struct sockaddr_in *addr, const char *ip, in
 void *hold_envthread(void *arg)
 {
     msg_t buf;
-	
-    //读取参考文件数据赋值给参考变量
+    // 获取环境数据
+    int fd, tmp, hum;
+    float tmp_f, hum_f;
+    unsigned short als_data; // 光照传感器是16位ADC
+    float lux, resolution = 0.0049;
+
+    // 读取参考文件数据赋值给参考变量
     FILE *fp = fopen("init.txt", "r");
     if (fp == NULL) {
         perror("fail to fopen");
         exit(-1);
     }
 
-    //fscanf(文件指针, "格式化字符串", 参数列表), %hhu 无符号字符
+    // fscanf(文件指针, "格式化字符串", 参数列表), %hhu 无符号字符
     fscanf(fp, "tempup=%f\n", &settempup);
     fscanf(fp, "tempdown=%f\n", &settempdown);
     fscanf(fp, "humeup=%f\n", &sethumeup);
@@ -156,59 +161,74 @@ void *hold_envthread(void *arg)
 
     fclose(fp);
 
-    //将参考变量数据赋值给参考变量
-    buf.limitset.tempup = settempup;
-    buf.limitset.tempdown = settempdown;
-    buf.limitset.humeup = sethumeup;
-    buf.limitset.humedown = sethumedown;
-    buf.limitset.luxup = setluxup;
-    buf.limitset.luxdown = setluxdown;
+    // 打印参考变量数据
+    printf("温度上限=%.2f 温度下限=%.2f 湿度上限=%.2f 湿度下限=%.2f 光照上限=%.2f 光照下限=%.2f\n",
+           settempup, settempdown, sethumeup, sethumedown, setluxup, setluxdown);
 
-    //打印参考变量数据
-    printf("温度上限=%.2f\n", buf.limitset.tempup);
-    printf("温度下限=%.2f\n", buf.limitset.tempdown);
-    printf("湿度上限=%.2f\n", buf.limitset.humeup);
-    printf("湿度下限=%.2f\n", buf.limitset.humedown);
-    printf("光照上限=%.2f\n", buf.limitset.luxup);
-    printf("光照下限=%.2f\n", buf.limitset.luxdown);
+    while (1) {
+        
+        // 获取环境数据
+        if ((fd = open("/dev/si7006", O_RDWR)) == -1)
+            PRINT_ERR("open error");
+        if (ioctl(fd, GET_TMP, &tmp) == -1)
+            PRINT_ERR("ioctl error");
+        if (ioctl(fd, GET_HUM, &hum) == -1)
+            PRINT_ERR("ioctl error");
 
-	while(1){
-        //根据环境数据与参考值比较，决定是否开启对应的设备
-        //判断温度是否超过上限
-        if(conttemp > buf.limitset.tempup){
-            //开启风扇设备
-            // buf.envdata.devstatus |= 0x02;
-            printf("温度过高，风扇开启\n");
-        }else if(conttemp < buf.limitset.tempdown){
-            //关闭风扇设备
+        close(fd);
+
+        hum_f = 125.0 * hum / 65536 - 6;
+        tmp_f = 175.72 * tmp / 65536 - 46.85;
+
+        if ((fd = open("/dev/ap3216", O_RDWR)) == -1)
+            PRINT_ERR("open error");
+
+        read(fd, &als_data, sizeof(als_data));
+        lux = als_data * resolution;
+
+        close(fd);
+
+        // 将获取到的环境数据赋值给缓存变量
+        conttemp = tmp_f;
+        conthume = hum_f;
+        contlux = lux;
+
+        // 根据环境数据与参考值比较，决定是否开启对应的设备
+        // 判断温度是否在设定范围内
+        if (conttemp >= settempdown && conttemp <= settempup) {
+            // 关闭风扇设备
             // buf.envdata.devstatus &= ~0x02;
-            printf("温度过低，风扇关闭\n");
+            printf("温度在设定范围内，风扇关闭\n");
+        } else {
+            // 开启风扇设备
+            // buf.envdata.devstatus |= 0x02;
+            printf("温度超出设定范围，风扇开启\n");
         }
 
-        //判断湿度是否超过上限
-        if(conthume > buf.limitset.humeup){
-            //开启蜂鸣器设备
-            // buf.envdata.devstatus |= 0x08;
-            printf("湿度过高，蜂鸣器开启\n");
-        }else if(conthume < buf.limitset.humedown){
-            //关闭蜂鸣器设备
+        // 判断湿度是否在设定范围内
+        if (conthume >= sethumedown && conthume <= sethumeup) {
+            // 关闭蜂鸣器设备
             // buf.envdata.devstatus &= ~0x08;
-            printf("湿度过低，蜂鸣器关闭\n");
+            printf("湿度在设定范围内，蜂鸣器关闭\n");
+        } else {
+            // 开启蜂鸣器设备
+            // buf.envdata.devstatus |= 0x08;
+            printf("湿度超出设定范围，蜂鸣器开启\n");
         }
 
-        //判断光照是否超过上限
-        if(contlux > buf.limitset.luxup){
-            //开启LED设备
-            // buf.envdata.devstatus |= 0x01;
-            printf("光强过高，LED关闭\n");
-        }else if(contlux < buf.limitset.luxdown){
-            //关闭LED设备
+        // 判断光照是否在设定范围内
+        if (contlux >= setluxdown && contlux <= setluxup) {
+            // 关闭LED设备
             // buf.envdata.devstatus &= ~0x01;
-            printf("光强过低，LED打开\n");
+            printf("光强在设定范围内，LED关闭\n");
+        } else {
+            // 开启LED设备
+            // buf.envdata.devstatus |= 0x01;
+            printf("光强超出设定范围，LED打开\n");
         }
-		//休眠一段时间继续工作
-        sleep(50);
-	}
+        // 休眠一段时间继续工作
+        sleep(5);
+    }
 }
 
 /*获取环境数据线程*/
