@@ -19,7 +19,6 @@ int main(int argc,const char * argv[])
 
     while(1){
         read(fd, &als_data, sizeof(als_data));
-        printf("ALS data: %d\n", als_data);
         lux = als_data * resolution;
         printf("ALS data: %f lux\n", lux); // 打印环境光数据
         sleep(1); // 每秒读取一次
