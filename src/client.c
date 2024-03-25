@@ -165,6 +165,12 @@ void *hold_envthread(void *arg)
     printf("温度上限=%.2f 温度下限=%.2f 湿度上限=%.2f 湿度下限=%.2f 光照上限=%.2f 光照下限=%.2f\n",
            settempup, settempdown, sethumeup, sethumedown, setluxup, setluxdown);
 
+
+    // 初始化设备状态为关闭
+    int fan_status = 0; // 风扇状态，0表示关闭，1表示开启
+    int buzzer_status = 0; // 蜂鸣器状态，0表示关闭，1表示开启
+    int led_status = 0; // LED状态，0表示关闭，1表示开启
+
     while (1) {
         
         // 获取环境数据
@@ -196,35 +202,53 @@ void *hold_envthread(void *arg)
         // 根据环境数据与参考值比较，决定是否开启对应的设备
         // 判断温度是否在设定范围内
         if (conttemp >= settempdown && conttemp <= settempup) {
-            // 关闭风扇设备
-            // buf.envdata.devstatus &= ~0x02;
-            printf("温度在设定范围内，风扇关闭\n");
+            if (fan_status != 0) {
+                fan_status = 0;
+                // 关闭风扇设备
+                // buf.envdata.devstatus &= ~0x02;
+                printf("温度在设定范围内，风扇关闭\n");
+            }
         } else {
-            // 开启风扇设备
-            // buf.envdata.devstatus |= 0x02;
-            printf("温度超出设定范围，风扇开启\n");
+            if (fan_status != 1) {
+                fan_status = 1;
+                // 开启风扇设备
+                // buf.envdata.devstatus |= 0x02;
+                printf("温度超出设定范围，风扇开启\n");
+            }
         }
 
         // 判断湿度是否在设定范围内
         if (conthume >= sethumedown && conthume <= sethumeup) {
-            // 关闭蜂鸣器设备
-            // buf.envdata.devstatus &= ~0x08;
-            printf("湿度在设定范围内，蜂鸣器关闭\n");
+            if(buzzer_status != 0){
+                buzzer_status = 0;
+                // 关闭蜂鸣器设备
+                // buf.envdata.devstatus &= ~0x08;
+                printf("湿度在设定范围内，蜂鸣器关闭\n");
+            }
         } else {
-            // 开启蜂鸣器设备
-            // buf.envdata.devstatus |= 0x08;
-            printf("湿度超出设定范围，蜂鸣器开启\n");
+            if(buzzer_status != 1){
+                buzzer_status = 1;
+                // 开启蜂鸣器设备
+                // buf.envdata.devstatus |= 0x08;
+                printf("湿度超出设定范围，蜂鸣器开启\n");
+            }
         }
 
         // 判断光照是否在设定范围内
         if (contlux >= setluxdown && contlux <= setluxup) {
-            // 关闭LED设备
-            // buf.envdata.devstatus &= ~0x01;
-            printf("光强在设定范围内，LED关闭\n");
+            if(led_status != 0){
+                led_status = 0;
+                // 关闭LED设备
+                // buf.envdata.devstatus &= ~0x01;
+                printf("光照在设定范围内，LED关闭\n");
+            }
         } else {
-            // 开启LED设备
-            // buf.envdata.devstatus |= 0x01;
-            printf("光强超出设定范围，LED打开\n");
+            if(led_status != 1){
+                led_status = 1;
+                // 开启LED设备
+                // buf.envdata.devstatus |= 0x01;
+                printf("光照超出设定范围，LED开启\n");
+            }
         }
         // 休眠一段时间继续工作
         sleep(5);
