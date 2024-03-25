@@ -2,6 +2,7 @@
     "files.associations": {
         "myhead.h": "c",
         "cerrno": "c",
-        "ioctl.h": "c"
+        "ioctl.h": "c",
+        "errno.h": "c"
     }
 }

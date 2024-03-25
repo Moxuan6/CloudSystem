@@ -84,6 +84,9 @@ typedef struct node{
 
 link_t *head;       //链表头指针
 
+#define LED_ON _IOW('L', 0, int)
+#define LED_OFF _IOW('L', 1, int)
+
 /* 信号处理 */
 void sig_handler(int signo);
 

@@ -1,5 +1,7 @@
 
 #include <../include/myhead.h>
+#include <sys/time.h>
+#include <errno.h>
 
 int network_init(int sockfd, int port)
 {
@@ -168,27 +170,32 @@ void *handl_thread(void *argv)
             memset(&buf, 0, sizeof(msg_t));
             // 等待消息
             msgrcv(msgid, &buf, sizeof(msg_t) - sizeof(long), recvmsgtype, 0);
+            puts("接收到消息...");
             
             send(accept_fd, &buf, sizeof(msg_t), 0);        // 发送消息
-
+            
+            puts("消息转发给了下位机，等待下位机的回复...");
+            memset(&buf, 0, sizeof(msg_t));
             ret = recv(accept_fd, &buf, sizeof(msg_t), 0);  // 接收消息
-            if(ret <= 0){
-                if (ret == 0) {
-                    // 客户端关闭了连接
-                    printf("Client closed connection\n");
-                } else {
-                    perror("fail to recv");
-                }
+            if(ret == 0){
+                puts("下位机断开连接...");
                 close(accept_fd);
                 delete_link(head, accept_fd); // 删除链表中的节点
+                buf.msgtype = sendmsgtype;  // 发送消息类型
+                buf.user.flags = 0;         // 失败
+                msgsnd(msgid, &buf, sizeof(msg_t) - sizeof(long), 0);
                 pthread_exit(NULL);
             }
             // 返回结果
+            puts("下位机回复了消息...");
             buf.msgtype = sendmsgtype;  // 发送消息类型
+            buf.user.flags = 1;         // 成功
             msgsnd(msgid, &buf, sizeof(msg_t) - sizeof(long), 0);
+            puts("将下位机数据提交给上位机...");
         }
-    }else{
-        printf("登录失败\n");
+    
+    } else {
+        printf("登录失败...\n");
         buf.user.flags = 0;     // 失败
         send(accept_fd, &buf, sizeof(msg_t), 0);
         close(accept_fd);

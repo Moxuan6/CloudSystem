@@ -143,6 +143,8 @@ void *hold_envthread(void *arg)
     float tmp_f, hum_f;
     unsigned short als_data; // 光照传感器是16位ADC
     float lux, resolution = 0.0049;
+    int led_num;
+
 
     // 读取参考文件数据赋值给参考变量
     FILE *fp = fopen("init.txt", "r");
@@ -199,6 +201,11 @@ void *hold_envthread(void *arg)
         conthume = hum_f;
         contlux = lux;
 
+        if ((fd = open("/dev/myled", O_RDWR)) == -1) {
+            perror("open error");
+            exit(1);
+        }
+
         // 根据环境数据与参考值比较，决定是否开启对应的设备
         // 判断温度是否在设定范围内
         if (conttemp >= settempdown && conttemp <= settempup) {
@@ -241,6 +248,9 @@ void *hold_envthread(void *arg)
                 // 关闭LED设备
                 // buf.envdata.devstatus &= ~0x01;
                 printf("光照在设定范围内，LED关闭\n");
+                for (led_num = 1; led_num <= 6; led_num++) {
+                    ioctl(fd, LED_OFF, &led_num);
+                }
             }
         } else {
             if(led_status != 1){
@@ -248,6 +258,9 @@ void *hold_envthread(void *arg)
                 // 开启LED设备
                 // buf.envdata.devstatus |= 0x01;
                 printf("光照超出设定范围，LED开启\n");
+                for (led_num = 1; led_num <= 6; led_num++) {
+                    ioctl(fd, LED_ON, &led_num);
+                }
             }
         }
         // 休眠一段时间继续工作
