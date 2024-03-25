@@ -26,7 +26,7 @@ int cgiMain(int argc, const char *argv[])
 		return -1;;
 	}
 
-	msgid = msgget(key,IPC_CREAT|0666);
+	msgid = msgget(key, IPC_CREAT | 0666);
 	if(-1==msgid){
 		return -1;
 	}
@@ -36,19 +36,22 @@ int cgiMain(int argc, const char *argv[])
 	
 	char name[128] = {0};
 	memcpy(name,cgiCookie,128);
+
 	char *s = name;
 	char buf[128] = {0};
 
 	while(*s!='='){
 		s++;	
 	}
+
 	s++;
 	long msgtype = 0;
 	int i = 0;
+
 	memset(&msg,0,sizeof(msg_t));
 	while(*s){
 		buf[i] = *s;
-		msg.msgtype+=*s;
+		msg.msgtype += *s;
 		s++;
 		i++;
 	}
@@ -56,14 +59,16 @@ int cgiMain(int argc, const char *argv[])
 	/*封装消息*/
 	rettype = msg.msgtype * 2;
 	msg.commd = 1; 	//查看环境数据
-	msgsnd(msgid,&msg,sizeof(msg_t)-sizeof(long),0);	//发送消息
+	msgsnd(msgid, &msg, sizeof(msg_t)-sizeof(long), 0);	//发送消息
 
 	/*设置超时时间*/
 	alarm(5);
 
 	/*接收消息*/
 	memset(&msg,0,sizeof(msg_t));
-	msgrcv(msgid,&msg,sizeof(msg_t)-sizeof(long),rettype,0);
+	msgrcv(msgid, &msg, sizeof(msg_t)-sizeof(long), rettype, 0);
+
+	msg.user.flags = 1;
 
 	if( 1 == msg.user.flags){
 		printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
@@ -73,7 +78,7 @@ int cgiMain(int argc, const char *argv[])
 		printf("<center>");
 		printf("<table border = \"3\">");
 		printf("<tr>");
-		printf("<td bgcolor=\"#00FFFF\">%s</td>",buf);	
+		printf("<td bgcolor=\"#00FFFF\">%s</td>",buf);
 		printf("</tr>");
 		printf("</table>");
 		printf("<h4>环境数据</h4>");
@@ -102,7 +107,7 @@ int cgiMain(int argc, const char *argv[])
 		}
 
 		/*解析温控状态*/
-		switch(msg.envdata.devstatus & 0x3 << 1){ 
+		switch(msg.envdata.devstatus &( 0x3 << 1)){ 
 			case 0:
 				printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">关</td>");
 				break;
@@ -120,7 +125,7 @@ int cgiMain(int argc, const char *argv[])
 		}
 
 		/*解析湿控状态*/
-		if(msg.envdata.devstatus & 0x1 << 3){
+		if(msg.envdata.devstatus & (0x1 << 3)){
 			printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">开</td>");
 		}else{
 			printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">关</td>");
