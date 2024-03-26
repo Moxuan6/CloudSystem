@@ -59,6 +59,10 @@ int main(int argc, char const *argv[])
         exit(-1);
     }
 
+    conttemp = 23.15;
+    conthume = 45;
+    contlux = 100;
+
     // 判断是否登录成功
     if(1 == msg.user.flags){
         printf("login success\n");
@@ -111,7 +115,7 @@ int main(int argc, char const *argv[])
             }
         }
     } else {
-        return -1;
+        printf("login fail\n");
     }
 
     close(sockfd);
@@ -380,7 +384,7 @@ void *ctrldev_thread(void *arg)
         printf("LED关闭\n");
     }
 
-    if( buf.devctrl & 0x02){
+    if( buf.devctrl & (0x3 << 1)){
         //开启风扇设备
         // buf.envdata.devstatus |= 0x02;
         printf("风扇开启\n");
@@ -390,7 +394,7 @@ void *ctrldev_thread(void *arg)
         printf("风扇关闭\n");
     }
 
-    if(buf.devctrl & 0x04){
+    if(buf.devctrl & (0x1 << 3)){
         //开启蜂鸣器设备
         // buf.envdata.devstatus |= 0x08;
         printf("蜂鸣器开启\n");

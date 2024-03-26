@@ -1,5 +1,7 @@
 #include <../include/myhead.h>
 
+long rettype;	//消息队列接收类型
+
 int cgiMain(int argc, const char *argv[])
 {
 	/*创建消息队列*/
@@ -18,6 +20,7 @@ int cgiMain(int argc, const char *argv[])
 	/*获取 用户 ID (login.cgi 设置的 cookie 值)*/
 	char namebuf[128] = {0};                            
 	memcpy(namebuf,cgiCookie,128);
+	
 	char *s = namebuf;
 	char buf[20] = {0};
 
@@ -26,7 +29,8 @@ int cgiMain(int argc, const char *argv[])
 	}
 	s++;
 	int i = 0;
-	msg.msgtype = 0;
+	long msgtype = 0;
+	memset(&msg,0,sizeof(msg_t));
 	while(*s){
 		buf[i] = *s;
 		msg.msgtype += *s;
@@ -35,10 +39,8 @@ int cgiMain(int argc, const char *argv[])
 	}
 
 	//封装设置阈值的消息
-	msg.msgtype = msg.msgtype*2;//封装发送消息类型
+	rettype = msg.msgtype * 2;//封装发送消息类型
 	msg.commd = 3;//告诉下位机 将设置阈值字段 赋值给 下位机的参考变量
-	msg.msgtype +=5;
-	long ret = msg.msgtype;
 	
 	/*获取网页数据*/
 	char devstatu[4] = {0};//放置 从网页获用户对设备的控制操作状态
@@ -75,7 +77,7 @@ int cgiMain(int argc, const char *argv[])
 
 	memset(&msg,0,sizeof(msg_t));
 
-	msgrcv(msgid,&msg,sizeof(msg_t)-sizeof(long),ret,0);//构建闭环控制
+	msgrcv(msgid,&msg,sizeof(msg_t)-sizeof(long), rettype, 0);//构建闭环控制
 	
 	/*获取用户ID ASCII 码求和值 作为等待的消息类型
 	 * 避免发送与接收相同消息类型混淆*/
