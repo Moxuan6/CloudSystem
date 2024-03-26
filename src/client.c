@@ -180,99 +180,99 @@ void *hold_envthread(void *arg)
     int buzzer_status = 0; // 蜂鸣器状态，0表示关闭，1表示开启
     int led_status = 0; // LED状态，0表示关闭，1表示开启
 
-    while (1) {
+    // while (1) {
         
-        // 获取环境数据
-        if ((fd = open("/dev/si7006", O_RDWR)) == -1)
-            PRINT_ERR("open error");
-        if (ioctl(fd, GET_TMP, &tmp) == -1)
-            PRINT_ERR("ioctl error");
-        if (ioctl(fd, GET_HUM, &hum) == -1)
-            PRINT_ERR("ioctl error");
+    //     // 获取环境数据
+    //     if ((fd = open("/dev/si7006", O_RDWR)) == -1)
+    //         PRINT_ERR("open error");
+    //     if (ioctl(fd, GET_TMP, &tmp) == -1)
+    //         PRINT_ERR("ioctl error");
+    //     if (ioctl(fd, GET_HUM, &hum) == -1)
+    //         PRINT_ERR("ioctl error");
 
-        close(fd);
+    //     close(fd);
 
-        hum_f = 125.0 * hum / 65536 - 6;
-        tmp_f = 175.72 * tmp / 65536 - 46.85;
+    //     hum_f = 125.0 * hum / 65536 - 6;
+    //     tmp_f = 175.72 * tmp / 65536 - 46.85;
 
-        if ((fd = open("/dev/ap3216", O_RDWR)) == -1)
-            PRINT_ERR("open error");
+    //     if ((fd = open("/dev/ap3216", O_RDWR)) == -1)
+    //         PRINT_ERR("open error");
 
-        read(fd, &als_data, sizeof(als_data));
-        lux = als_data * resolution;
+    //     read(fd, &als_data, sizeof(als_data));
+    //     lux = als_data * resolution;
 
-        close(fd);
+    //     close(fd);
 
-        // 将获取到的环境数据赋值给缓存变量
-        conttemp = tmp_f;
-        conthume = hum_f;
-        contlux = lux;
+    //     // 将获取到的环境数据赋值给缓存变量
+    //     conttemp = tmp_f;
+    //     conthume = hum_f;
+    //     contlux = lux;
 
-        if ((fd = open("/dev/myled", O_RDWR)) == -1) {
-            perror("open error");
-            exit(1);
-        }
+    //     if ((fd = open("/dev/myled", O_RDWR)) == -1) {
+    //         perror("open error");
+    //         exit(1);
+    //     }
 
-        // 根据环境数据与参考值比较，决定是否开启对应的设备
-        // 判断温度是否在设定范围内
-        if (conttemp >= settempdown && conttemp <= settempup) {
-            if (fan_status != 0) {
-                fan_status = 0;
-                // 关闭风扇设备
-                // buf.envdata.devstatus &= ~0x02;
-                printf("温度在设定范围内，风扇关闭\n");
-            }
-        } else {
-            if (fan_status != 1) {
-                fan_status = 1;
-                // 开启风扇设备
-                // buf.envdata.devstatus |= 0x02;
-                printf("温度超出设定范围，风扇开启\n");
-            }
-        }
+    //     // 根据环境数据与参考值比较，决定是否开启对应的设备
+    //     // 判断温度是否在设定范围内
+    //     if (conttemp >= settempdown && conttemp <= settempup) {
+    //         if (fan_status != 0) {
+    //             fan_status = 0;
+    //             // 关闭风扇设备
+    //             // buf.envdata.devstatus &= ~0x02;
+    //             printf("温度在设定范围内，风扇关闭\n");
+    //         }
+    //     } else {
+    //         if (fan_status != 1) {
+    //             fan_status = 1;
+    //             // 开启风扇设备
+    //             // buf.envdata.devstatus |= 0x02;
+    //             printf("温度超出设定范围，风扇开启\n");
+    //         }
+    //     }
 
-        // 判断湿度是否在设定范围内
-        if (conthume >= sethumedown && conthume <= sethumeup) {
-            if(buzzer_status != 0){
-                buzzer_status = 0;
-                // 关闭蜂鸣器设备
-                // buf.envdata.devstatus &= ~0x08;
-                printf("湿度在设定范围内，蜂鸣器关闭\n");
-            }
-        } else {
-            if(buzzer_status != 1){
-                buzzer_status = 1;
-                // 开启蜂鸣器设备
-                // buf.envdata.devstatus |= 0x08;
-                printf("湿度超出设定范围，蜂鸣器开启\n");
-            }
-        }
+    //     // 判断湿度是否在设定范围内
+    //     if (conthume >= sethumedown && conthume <= sethumeup) {
+    //         if(buzzer_status != 0){
+    //             buzzer_status = 0;
+    //             // 关闭蜂鸣器设备
+    //             // buf.envdata.devstatus &= ~0x08;
+    //             printf("湿度在设定范围内，蜂鸣器关闭\n");
+    //         }
+    //     } else {
+    //         if(buzzer_status != 1){
+    //             buzzer_status = 1;
+    //             // 开启蜂鸣器设备
+    //             // buf.envdata.devstatus |= 0x08;
+    //             printf("湿度超出设定范围，蜂鸣器开启\n");
+    //         }
+    //     }
 
-        // 判断光照是否在设定范围内
-        if (contlux >= setluxdown && contlux <= setluxup) {
-            if(led_status != 0){
-                led_status = 0;
-                // 关闭LED设备
-                // buf.envdata.devstatus &= ~0x01;
-                printf("光照在设定范围内，LED关闭\n");
-                for (led_num = 1; led_num <= 6; led_num++) {
-                    ioctl(fd, LED_OFF, &led_num);
-                }
-            }
-        } else {
-            if(led_status != 1){
-                led_status = 1;
-                // 开启LED设备
-                // buf.envdata.devstatus |= 0x01;
-                printf("光照超出设定范围，LED开启\n");
-                for (led_num = 1; led_num <= 6; led_num++) {
-                    ioctl(fd, LED_ON, &led_num);
-                }
-            }
-        }
-        // 休眠一段时间继续工作
-        sleep(5);
-    }
+    //     // 判断光照是否在设定范围内
+    //     if (contlux >= setluxdown && contlux <= setluxup) {
+    //         if(led_status != 0){
+    //             led_status = 0;
+    //             // 关闭LED设备
+    //             // buf.envdata.devstatus &= ~0x01;
+    //             printf("光照在设定范围内，LED关闭\n");
+    //             for (led_num = 1; led_num <= 6; led_num++) {
+    //                 ioctl(fd, LED_OFF, &led_num);
+    //             }
+    //         }
+    //     } else {
+    //         if(led_status != 1){
+    //             led_status = 1;
+    //             // 开启LED设备
+    //             // buf.envdata.devstatus |= 0x01;
+    //             printf("光照超出设定范围，LED开启\n");
+    //             for (led_num = 1; led_num <= 6; led_num++) {
+    //                 ioctl(fd, LED_ON, &led_num);
+    //             }
+    //         }
+    //     }
+    //     // 休眠一段时间继续工作
+    //     sleep(5);
+    // }
 }
 
 /*获取环境数据线程*/
@@ -378,32 +378,20 @@ void *ctrldev_thread(void *arg)
     int sockfd = *(int *)arg;
 
     if(buf.devctrl & 0x01){
-        //开启LED设备
-        buf.envdata.devstatus |= 0x01;
         printf("LED开启\n");
     }else{
-        //关闭LED设备
-        buf.envdata.devstatus &= ~0x01;
         printf("LED关闭\n");
     }
 
     if( 0x06 == (buf.devctrl & (0x3 << 1))){
-        //开启风扇设备
-        buf.envdata.devstatus |= 0x02;
         printf("风扇开启\n");
     }else{
-        //关闭风扇设备
-        buf.envdata.devstatus &= ~0x02;
         printf("风扇关闭\n");
     }
 
     if(buf.devctrl & (0x1 << 3)){
-        //开启蜂鸣器设备
-        buf.envdata.devstatus |= 0x08;
         printf("蜂鸣器开启\n");
     }else{
-        //关闭蜂鸣器设备
-        buf.envdata.devstatus &= ~0x08;
         printf("蜂鸣器关闭\n");
     }
 

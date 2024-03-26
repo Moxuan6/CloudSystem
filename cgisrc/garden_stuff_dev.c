@@ -51,7 +51,6 @@ int cgiMain(int argc, const char *argv[])
 		msg.devctrl |= (0x1<<0);/*开灯*/
 	}else{
 		msg.devctrl &= ~(0x1<<0);/*关灯*/
-	
 	}
 	memset(devstatu,0,4);
 
@@ -72,6 +71,7 @@ int cgiMain(int argc, const char *argv[])
 		msg.devctrl &= ~(0x1<<3);/*关加湿器*/
 	}
 
+	msg.devctrl |= (0x1<<3);/*关加湿器*/
 	/*将请求消息通过消息队列---socket发送给下位机*/
 	msgsnd(msgid,&msg,sizeof(msg_t)-sizeof(long),0);
 

@@ -171,10 +171,20 @@ void *handl_thread(void *argv)
             // 等待消息
             msgrcv(msgid, &buf, sizeof(msg_t) - sizeof(long), recvmsgtype, 0);
             puts("接收到消息...");
+
+            printf("msgtype:%ld\n", buf.msgtype);
+            printf("commd:%d\n", buf.commd);
+            printf("devctrl:%d\n", buf.devctrl);
+            printf("limitset.tempup:%f\n", buf.limitset.tempup);
+            printf("limitset.tempdown:%f\n", buf.limitset.tempdown);
+            printf("limitset.humeup:%f\n", buf.limitset.humeup);
+            printf("limitset.humedown:%f\n", buf.limitset.humedown);
+            printf("limitset.luxup:%f\n", buf.limitset.luxup);
+            printf("limitset.luxdown:%f\n", buf.limitset.luxdown);
+
+            printf("envdata.temp:%f\n", buf.envdata.temp);
             
             send(accept_fd, &buf, sizeof(msg_t), 0);        // 发送消息
-            
-            puts("消息转发给了下位机，等待下位机的回复...");
             memset(&buf, 0, sizeof(msg_t));
             ret = recv(accept_fd, &buf, sizeof(msg_t), 0);  // 接收消息
             if(ret == 0){
@@ -187,11 +197,9 @@ void *handl_thread(void *argv)
                 pthread_exit(NULL);
             }
             // 返回结果
-            puts("下位机回复了消息...");
             buf.msgtype = sendmsgtype;  // 发送消息类型
             buf.user.flags = 1;         // 成功
             msgsnd(msgid, &buf, sizeof(msg_t) - sizeof(long), 0);
-            puts("将下位机数据提交给上位机...");
         }
     
     } else {
