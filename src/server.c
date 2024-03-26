@@ -181,8 +181,6 @@ void *handl_thread(void *argv)
             printf("limitset.humedown:%f\n", buf.limitset.humedown);
             printf("limitset.luxup:%f\n", buf.limitset.luxup);
             printf("limitset.luxdown:%f\n", buf.limitset.luxdown);
-
-            printf("envdata.temp:%f\n", buf.envdata.temp);
             
             send(accept_fd, &buf, sizeof(msg_t), 0);        // 发送消息
             memset(&buf, 0, sizeof(msg_t));

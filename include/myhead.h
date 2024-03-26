@@ -51,7 +51,7 @@ typedef struct{
 } limitset_t;
 
 typedef struct {
-    long long msgtype;
+    long msgtype;
     char commd;
     user_t user;
     env_t envdata;
@@ -60,6 +60,17 @@ typedef struct {
     char devctrl;
 } msg_t;
 
+typedef struct {
+    long long msgtype;
+    char commd;
+    user_t user;
+    env_t envdata;
+    limitset_t limitset;
+    /* 控制设备数据 */
+    char devctrl;
+} msg_arm_t;
+
+msg_arm_t  msgarm;     //消息结构体
 msg_t msg;          //消息结构体
 
 /*采集到的数据缓冲变量*/

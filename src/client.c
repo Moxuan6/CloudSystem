@@ -8,7 +8,7 @@
 #include <sys/ioctl.h>
 #include <sys/errno.h>
 
-#define PRINT_ERR(msg) do { perror(msg); exit(1); } while (0)
+#define PRINT_ERR(massge) do { perror(massge); exit(1); } while (0)
 
 /*根据用户设置的阈值维护恒定环境线程*/
 void *hold_envthread(void *argv);
@@ -44,48 +44,36 @@ int main(int argc, char const *argv[])
     }
 
     // 连接上位机
-    strcpy(msg.user.username, "admin");
-    strcpy(msg.user.password, "123456");
+    strcpy(msgarm.user.username, "admin");
+    strcpy(msgarm.user.password, "123456");
 
     // 发送登录信息
-    if (-1 == send(sockfd, &msg, sizeof(msg), 0)) {
+    if (-1 == send(sockfd, &msgarm, sizeof(msg_arm_t), 0)) {
         perror("fail to send");
         exit(-1);
     }
 
     // 接收登录信息
-    if (-1 == recv(sockfd, &msg, sizeof(msg), 0)) {
+    if (-1 == recv(sockfd, &msgarm, sizeof(msg_arm_t), 0)) {
         perror("fail to recv");
         exit(-1);
     }
 
-    conttemp = 23.15;
-    conthume = 45;
-    contlux = 100;
-
-    // 判断是否登录成功
-    if(1 == msg.user.flags){
-        printf("login success\n");
-    } else {
-        printf("login fail\n");
-        return -1;
-    }
-
-    if( 1 == msg.user.flags){
+    if( 1 == msgarm.user.flags){
         /*创建维护环境线程*/
 		pthread_create(&tid,NULL,hold_envthread,NULL);
 
         /*等待用户下发指令，执行指令，返回结果*/
         while(1){
-            memset(&msg,0,sizeof(msg));
+            memset(&msgarm,0,sizeof(msg_arm_t));
             
             // 接收上位机的指令
-            if (0 == recv(sockfd, &msg, sizeof(msg), 0)) {
+            if (0 == recv(sockfd, &msgarm, sizeof(msg_arm_t), 0)) {
                 printf("Server closed the connection. Exiting.\n");
                 exit(-1);
             }
 
-            switch(msg.commd){
+            switch(msgarm.commd){
                 case 1:
                     /*获取环境数据*/
                     puts("获取环境数据");
@@ -142,9 +130,9 @@ int client_network_init(int sockfd, struct sockaddr_in *addr, const char *ip, in
 }
 
 /*根据用户设置的阈值维护恒定环境线程*/
-void *hold_envthread(void *arg)
+void *hold_envthread(void *argv)
 {
-    msg_t buf;
+    msg_arm_t buf;
     // 获取环境数据
     int fd, tmp, hum;
     float tmp_f, hum_f;
@@ -276,10 +264,10 @@ void *hold_envthread(void *arg)
 }
 
 /*获取环境数据线程*/
-void *getenv_thpread(void *arg)
+void *getenv_thpread(void *argv)
 {
-   	msg_t buf;
-    int sockfd = *(int *)arg;
+   	msg_arm_t buf;
+    int sockfd = *(int *)argv;
 
     int fd, tmp, hum;
     float tmp_f, hum_f;
@@ -317,9 +305,9 @@ void *getenv_thpread(void *arg)
     contlux = buf.envdata.lux;
     
     buf.envdata.devstatus = 0x01 | 0x02 | 0x08; // 0000 0001 | 0000 0010 | 0000 1000 = 0000 1011
-
+    
     //返回环境数据结果
-    if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
+    if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) {
         perror("fail to send");
         exit(-1);
     }
@@ -328,10 +316,10 @@ void *getenv_thpread(void *arg)
 }
 
 /*设置阈值线程*/
-void *setlimit_thread(void *arg)
+void *setlimit_thread(void *argv)
 {
-    msg_t buf;
-    int sockfd = *(int *)arg;
+    msg_arm_t buf;
+    int sockfd = *(int *)argv;
 	//将 buf.limitset字段中的数据赋值给参考变量
 
     settempup = buf.limitset.tempup;
@@ -362,7 +350,7 @@ void *setlimit_thread(void *arg)
         settempup, settempdown, sethumeup, sethumedown, setluxup, setluxdown);
 
 	//将执行结果返回给服务器
-    if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
+    if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) {
         perror("fail to send");
         exit(-1);
     }
@@ -372,10 +360,10 @@ void *setlimit_thread(void *arg)
 }
 
 /*控制设备线程*/
-void *ctrldev_thread(void *arg)
+void *ctrldev_thread(void *argv)
 {
-    msg_t buf;
-    int sockfd = *(int *)arg;
+    msg_arm_t buf;
+    int sockfd = *(int *)argv;
 
     if(buf.devctrl & 0x01){
         printf("LED开启\n");
@@ -396,7 +384,7 @@ void *ctrldev_thread(void *arg)
     }
 
     // 返回执行结果
-    if (-1 == send(sockfd, &buf, sizeof(buf), 0)) {
+    if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) {
         perror("fail to send");
         exit(-1);
     }
