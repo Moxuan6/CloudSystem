@@ -341,6 +341,9 @@ void *setlimit_thread(void *arg)
     setluxup = buf.limitset.luxup;
     setluxdown = buf.limitset.luxdown;
     
+    printf("温度上限=%.2f 温度下限=%.2f 湿度上限=%.2f 湿度下限=%.2f 光照上限=%.2f 光照下限=%.2f\n", 
+        settempup, settempdown, sethumeup, sethumedown, setluxup, setluxdown);
+
     //将参考变量数据写入到文件中
     FILE *fp = fopen("init.txt", "w");
     if (fp == NULL) {
@@ -384,7 +387,7 @@ void *ctrldev_thread(void *arg)
         printf("LED关闭\n");
     }
 
-    if( buf.devctrl & (0x3 << 1)){
+    if( 0x06 == (buf.devctrl & (0x3 << 1))){
         //开启风扇设备
         buf.envdata.devstatus |= 0x02;
         printf("风扇开启\n");
