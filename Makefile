@@ -4,7 +4,7 @@ INCLUDE_DIR = ./include/
 CGI_BIN_DIR = /home/jeremy/Documents/www/cgi-bin/
 ROOTFS_DIR = /home/jeremy/rootfs/
 CGI_SRC = ./cgisrc/cgic.c
-CGI_FILES = login.cgi garden_stuff_view.cgi
+CGI_FILES = login.cgi garden_stuff_view.cgi garden_stuff_dev.cgi garden_stuff_set.cgi
 
 all: server-arm64 $(CGI_FILES) client-arm mydev
 
