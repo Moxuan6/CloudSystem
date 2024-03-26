@@ -376,31 +376,31 @@ void *ctrldev_thread(void *arg)
 
     if(buf.devctrl & 0x01){
         //开启LED设备
-        // buf.envdata.devstatus |= 0x01;
+        buf.envdata.devstatus |= 0x01;
         printf("LED开启\n");
     }else{
         //关闭LED设备
-        // buf.envdata.devstatus &= ~0x01;
+        buf.envdata.devstatus &= ~0x01;
         printf("LED关闭\n");
     }
 
     if( buf.devctrl & (0x3 << 1)){
         //开启风扇设备
-        // buf.envdata.devstatus |= 0x02;
+        buf.envdata.devstatus |= 0x02;
         printf("风扇开启\n");
     }else{
         //关闭风扇设备
-        // buf.envdata.devstatus &= ~0x02;
+        buf.envdata.devstatus &= ~0x02;
         printf("风扇关闭\n");
     }
 
     if(buf.devctrl & (0x1 << 3)){
         //开启蜂鸣器设备
-        // buf.envdata.devstatus |= 0x08;
+        buf.envdata.devstatus |= 0x08;
         printf("蜂鸣器开启\n");
     }else{
         //关闭蜂鸣器设备
-        // buf.envdata.devstatus &= ~0x08;
+        buf.envdata.devstatus &= ~0x08;
         printf("蜂鸣器关闭\n");
     }
 
