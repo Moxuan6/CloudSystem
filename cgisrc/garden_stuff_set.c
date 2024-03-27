@@ -2,9 +2,17 @@
 
 long rettype;	//消息队列接收类型
 
+void handler(int argc)
+{
+	msgrcv(msgid,&msg,sizeof(msg_t)-sizeof(long),rettype/2,IPC_NOWAIT);
+
+	printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
+	printf("<script>alert('网络原因导致数据不可达，请稍后重试'); window.location.href = '/greenhouse/garden_stuff.html';</script>");
+	exit(0);
+}
+
 int cgiMain(int argc, const char *argv[])
 {
-
 	/*创建消息队列*/
 	key = ftok(MSGPATH,'m');
 	if(-1==key){
@@ -16,77 +24,71 @@ int cgiMain(int argc, const char *argv[])
 		return -1;
 	}
 
-	memset(&msg,0,sizeof(msg_t));
+	/*设置信号处理函数*/
+	signal(SIGALRM,handler);
 
-	/*获取 用户 ID (login.cgi 设置的 cookie 值)*/
-	char namebuf[128] = {0};                            
-	memcpy(namebuf,cgiCookie,128);
-	
-	char *s = namebuf;
-	char buf[20] = {0};
+	char name[128] = {0};
+	memcpy(name,cgiCookie,128);
+	char *s = name;
+	char buf[128] = {0};
 
 	while(*s!='='){
-		s++;
+		s++;	
 	}
 	s++;
-	int i = 0;
 	long msgtype = 0;
-	memset(&msg, 0, sizeof(msg_t));
+	int i = 0;
+	memset(&msg,0,sizeof(msg_t));
 	while(*s){
 		buf[i] = *s;
-		msg.msgtype += *s;
+		msg.msgtype+=*s;
 		s++;
 		i++;
 	}
 
-	//封装设置阈值的消息
-	rettype = msg.msgtype * 2;//封装发送消息类型
-	msg.commd = 2;//告诉下位机 将设置阈值字段 赋值给 下位机的参考变量
+	/*封装消息*/
+	rettype = msg.msgtype*2;
+	msg.commd = 2;//获取环境数据
 	
+	char data[10] = {0};
+
 	/*获取网页数据*/
-	char setvlaue[10] = {0};//放置 从网页获取的设置数据，因为传输过来的是字符串，需要转换一下才能赋值
+	cgiFormString("temp_up",data,10);
+	msg.limitset.tempup = atof(data);
 
-	cgiFormString("temp_up",setvlaue,10);
-	msg.limitset.tempup = atof(setvlaue);
-	memset(setvlaue,0,10);
+	memset(data,0,sizeof(data));
+	cgiFormString("temp_low",data,10);
+	msg.limitset.tempdown = atof(data);
 
-	cgiFormString("temp_low",setvlaue,10);
-	msg.limitset.tempdown = atof(setvlaue);
-	memset(setvlaue,0,10);
+	memset(data,0,sizeof(data));
+	cgiFormString("hum_up",data,10);
+	msg.limitset.humeup = atof(data);
 
-	cgiFormString("hum_up",setvlaue,10);
-	msg.limitset.humeup = atoi(setvlaue);
-	memset(setvlaue,0,10);
-	
-	cgiFormString("hum_low",setvlaue,10);
-	msg.limitset.humedown = atoi(setvlaue);
-	memset(setvlaue,0,10);
+	memset(data,0,sizeof(data));
+	cgiFormString("hum_low",data,10);
+	msg.limitset.humedown = atof(data);
 
-	cgiFormString("illu_up",setvlaue,10);
-	msg.limitset.luxup = atoi(setvlaue);
-	memset(setvlaue,0,10);
+	memset(data,0,sizeof(data));
+	cgiFormString("illu_up",data,10);
+	msg.limitset.luxup = atof(data);
 
-	cgiFormString("illu_low",setvlaue,10);
-	msg.limitset.luxdown = atoi(setvlaue);
+	memset(data,0,sizeof(data));
+	cgiFormString("illu_low",data,10);
+	msg.limitset.luxdown = atof(data);
 
-	/*将请求消息通过消息队列---socket发送给下位机*/
 	msgsnd(msgid,&msg,sizeof(msg_t)-sizeof(long),0);
+	alarm(5);//设置闹钟时间
 
 	memset(&msg,0,sizeof(msg_t));
+	msgrcv(msgid,&msg,sizeof(msg_t)-sizeof(long),rettype,0);
 
-	msgrcv(msgid,&msg,sizeof(msg_t)-sizeof(long), rettype, 0);//构建闭环控制
-	
-	/*获取用户ID ASCII 码求和值 作为等待的消息类型
-	 * 避免发送与接收相同消息类型混淆*/
-	printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
-	printf("<!DOCTYPE html>");
-	printf("<html>");
-	printf("<body>");
-	printf("<center>");
-	printf("<script>alert('提交成功'); window.location.href = '/greenhouse/garden_stuff.html';</script>");
-	printf("</center>");
-	printf("</body>");
-	printf("</html>");
+	if(1==msg.user.flags){
+		printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
+		printf("<script>alert('阈值设置成功'); window.location.href = '/greenhouse/garden_stuff.html';</script>");
+	}else{
+		printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
+		printf("<script>alert('网络原因导致阈值设置失败，请稍后重试'); window.location.href = '/greenhouse/garden_stuff.html';</script>");
+	}
+
 	return 0;
-
 }

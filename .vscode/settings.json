@@ -4,6 +4,8 @@
         "cerrno": "c",
         "ioctl.h": "c",
         "errno.h": "c",
-        "motor.h": "c"
+        "motor.h": "c",
+        "cgic.h": "c",
+        "si7006.h": "c"
     }
 }

@@ -16,13 +16,19 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sqlite3.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/errno.h>
 #include "cgic.h"
 
 #define MSGPATH "/home/jeremy/" //消息队列路径
+#define PRINT_ERR(massge) do { perror(massge); exit(1); } while (0)
 
 key_t key;          //消息队列 key
 int msgid;          //消息队列 id
 pthread_t tid;      //线程ID
+int led_fd,motor_fd,si7006_fd,ap3216_fd,fan_fd; //设备文件描述符
+int sockfd;         //网络套接字
 
 /* 统一数据结构 */
 /* 登录数据 */
@@ -73,10 +79,13 @@ typedef struct {
 msg_arm_t  msgarm;     //消息结构体
 msg_t msg;          //消息结构体
 
+char setflags;      //设置阈值标志
+
 /*采集到的数据缓冲变量*/
 float conttemp;
 float conthume;
 float contlux;
+unsigned char contdevstatus;
 
 /*用户设置的参考变量*/
 float settempup;
@@ -127,5 +136,23 @@ void delete_link(link_t *head, int fd);
 
 /* 销毁链表 */
 void destroy_link(link_t **head);
+
+/*根据用户设置的阈值维护恒定环境线程*/
+void *hold_envthread(void *argv);
+
+/*获取环境数据线程*/
+void *getenv_thpread(void *argv);
+
+/*设置阈值线程*/
+void *setlimit_thread(void *argv);
+
+/*控制设备线程*/
+void *ctrldev_thread(void *argv);
+
+/*初始化网络*/
+int client_network_init(int sockfd, struct sockaddr_in *addr, const char *ip, int port);
+
+/*获取文件配置*/
+int read_config(void);
 
 #endif
