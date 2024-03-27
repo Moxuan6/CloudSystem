@@ -86,6 +86,9 @@ float sethumedown;
 float setluxup;
 float setluxdown;
 
+/*设备控制变量*/
+char devctrl;
+
 /* 链表节点 */
 typedef struct node{
     char ID[32];

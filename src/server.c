@@ -171,17 +171,6 @@ void *handl_thread(void *argv)
             // 等待消息
             msgrcv(msgid, &buf, sizeof(msg_t) - sizeof(long), recvmsgtype, 0);
             puts("接收到消息...");
-
-            printf("msgtype:%ld\n", buf.msgtype);
-            printf("commd:%d\n", buf.commd);
-            printf("devctrl:%d\n", buf.devctrl);
-            printf("limitset.tempup:%f\n", buf.limitset.tempup);
-            printf("limitset.tempdown:%f\n", buf.limitset.tempdown);
-            printf("limitset.humeup:%f\n", buf.limitset.humeup);
-            printf("limitset.humedown:%f\n", buf.limitset.humedown);
-            printf("limitset.luxup:%f\n", buf.limitset.luxup);
-            printf("limitset.luxdown:%f\n", buf.limitset.luxdown);
-            
             send(accept_fd, &buf, sizeof(msg_t), 0);        // 发送消息
             memset(&buf, 0, sizeof(msg_t));
             ret = recv(accept_fd, &buf, sizeof(msg_t), 0);  // 接收消息

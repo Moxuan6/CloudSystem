@@ -85,6 +85,12 @@ int main(int argc, char const *argv[])
                 case 2:
                     /*设置阈值*/
                     puts("设置阈值");
+                    settempup = msgarm.limitset.tempup;
+                    settempdown = msgarm.limitset.tempdown;
+                    sethumeup = msgarm.limitset.humeup;
+                    sethumedown = msgarm.limitset.humedown;
+                    setluxup = msgarm.limitset.luxup;
+                    setluxdown = msgarm.limitset.luxdown;
                     if (pthread_create(&tid, NULL, setlimit_thread, &sockfd) != 0) {
                         perror("fail to create thread");
                         exit(-1);
@@ -93,6 +99,7 @@ int main(int argc, char const *argv[])
                 case 3:
                     /*控制设备*/
                     puts("控制设备");
+                    devctrl = msgarm.devctrl;
                     if (pthread_create(&tid, NULL, ctrldev_thread, &sockfd) != 0) {
                         perror("fail to create thread");
                         exit(-1);
@@ -321,14 +328,6 @@ void *setlimit_thread(void *argv)
     msg_arm_t buf;
     int sockfd = *(int *)argv;
 	//将 buf.limitset字段中的数据赋值给参考变量
-
-    settempup = buf.limitset.tempup;
-    settempdown = buf.limitset.tempdown;
-    sethumeup = buf.limitset.humeup;
-    sethumedown = buf.limitset.humedown;
-    setluxup = buf.limitset.luxup;
-    setluxdown = buf.limitset.luxdown;
-    
     printf("温度上限=%.2f 温度下限=%.2f 湿度上限=%.2f 湿度下限=%.2f 光照上限=%.2f 光照下限=%.2f\n", 
         settempup, settempdown, sethumeup, sethumedown, setluxup, setluxdown);
 
@@ -365,19 +364,19 @@ void *ctrldev_thread(void *argv)
     msg_arm_t buf;
     int sockfd = *(int *)argv;
 
-    if(buf.devctrl & 0x01){
+    if(devctrl & 0x01){
         printf("LED开启\n");
     }else{
         printf("LED关闭\n");
     }
 
-    if( 0x06 == (buf.devctrl & (0x3 << 1))){
+    if( 0x06 == (devctrl & (0x3 << 1))){
         printf("风扇开启\n");
     }else{
         printf("风扇关闭\n");
     }
 
-    if(buf.devctrl & (0x1 << 3)){
+    if(devctrl & (0x1 << 3)){
         printf("蜂鸣器开启\n");
     }else{
         printf("蜂鸣器关闭\n");
