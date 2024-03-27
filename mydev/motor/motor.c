@@ -1,12 +1,5 @@
 #include "motor.h"
-#include <linux/fs.h>
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/io.h>
-#include <linux/uaccess.h>
-#include <linux/device.h>
 
-#define CNAME "motor"
 static int major = 0;
 char kbuf[128] = {0};
 static struct class *motor_class;

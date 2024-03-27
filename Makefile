@@ -24,11 +24,15 @@ mydev:
 	make -C mydev/Ambient-light
 	make -C mydev/led
 	make -C mydev/temp-hume
+	make -C mydev/fan
+	make -C mydev/motor
 
 install:
 	make -C mydev/Ambient-light install
-	make -C mydev/led	install
+	make -C mydev/led install
 	make -C mydev/temp-hume	install
+	make -C mydev/fan install
+	make -C mydev/motor	install
 
 clean:
 	rm -f $(BIN_DIR)server-arm64
@@ -37,3 +41,5 @@ clean:
 	make -C mydev/Ambient-light clean
 	make -C mydev/led clean
 	make -C mydev/temp-hume clean
+	make -C mydev/fan clean
+	make -C mydev/motor clean

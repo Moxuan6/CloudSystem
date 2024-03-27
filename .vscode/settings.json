@@ -3,6 +3,7 @@
         "myhead.h": "c",
         "cerrno": "c",
         "ioctl.h": "c",
-        "errno.h": "c"
+        "errno.h": "c",
+        "motor.h": "c"
     }
 }
