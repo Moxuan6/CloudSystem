@@ -106,16 +106,16 @@ int cgiMain(int argc, const char *argv[])
 
 		/*解析温控状态*/
 		switch(msg.envdata.devstatus &( 0x3 << 1)){ 
-			case 0:
+			case 0x00:
 				printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">关</td>");
 				break;
-			case 1:
+			case 0x02:
 				printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">1挡</td>");
 				break;
-			case 2:
+			case 0x04:
 				printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">2挡</td>");
 				break;
-			case 3:
+			case 0x06:
 				printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">3挡</td>");
 				break;
 			default:

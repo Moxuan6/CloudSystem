@@ -81,7 +81,11 @@ typedef struct {
 msg_arm_t  msgarm;     //消息结构体
 msg_t msg;          //消息结构体
 
-char setflags;      //设置阈值标志
+char setflags = 0;      //设置阈值标志
+int fan_duty_cycle = 0;
+int motor_duty_cycle = 0;
+char fanbuf[10];
+char motorbuf[10];
 
 /*采集到的数据缓冲变量*/
 float conttemp;
@@ -96,9 +100,6 @@ float sethumeup;
 float sethumedown;
 float setluxup;
 float setluxdown;
-
-/*设备控制变量*/
-char devctrl;
 
 /* 链表节点 */
 typedef struct node{

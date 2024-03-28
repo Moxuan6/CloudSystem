@@ -1,10 +1,6 @@
 #include "../include/myhead.h"
 #include "../mydev/temp-hume/si7006.h"
 
-pthread_mutex_t lock; // 定义互斥锁
-pthread_cond_t cond; // 定义条件变量
-int control_device = 0; // 定义一个标志，表示是否有线程正在控制设备
-
 void close_device(void)
 {
     // 关闭led设备
@@ -166,10 +162,6 @@ void *hold_envthread(void *argv)
     // 获取环境数据
     int tmp, hum;
     unsigned short als_data; // 光照传感器是16位ADC
-    int fan_duty_cycle = 0;
-    int motor_duty_cycle = 0;
-    char fanbuf[10];
-    char motorbuf[10];
 
     contdevstatus = 0x00;
     setflags = 1;
@@ -297,9 +289,6 @@ void *ctrldev_thread(void *argv)
 {
     msg_arm_t buf = *(msg_arm_t *)argv;
     setflags = 0;
-    int motor_duty_cycle = 0, fan_duty_cycle = 0;
-    char fanbuf[10];
-    char motorbuf[10];
 
     //根据 buf 中devctrl 字段对应的位，控制设备的启停操作
     // 灯光控制
@@ -357,6 +346,7 @@ void *ctrldev_thread(void *argv)
     buf.user.flags = 1;
     if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) 
         PRINT_ERR("fail to send");
+    
     pthread_exit(NULL);
 }
 
