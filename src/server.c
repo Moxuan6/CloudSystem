@@ -1,7 +1,5 @@
 
 #include <../include/myhead.h>
-#include <sys/time.h>
-#include <errno.h>
 
 int network_init(int sockfd, int port)
 {

@@ -1,9 +1,52 @@
 #include "../include/myhead.h"
 #include "../mydev/temp-hume/si7006.h"
 
+pthread_mutex_t lock; // 定义互斥锁
+pthread_cond_t cond; // 定义条件变量
+int control_device = 0; // 定义一个标志，表示是否有线程正在控制设备
+
+void close_device(void)
+{
+    // 关闭led设备
+    for (int led_num = 1; led_num <= 6; led_num++) {
+        ioctl(led_fd, LED_OFF, &led_num);
+    }
+
+    // 关闭风扇
+    if (write(fan_fd, "0", 1) < 0)
+        PRINT_ERR("write error");
+
+    // 关闭电机
+    if (write(motor_fd, "0", 1) < 0)
+        PRINT_ERR("write error");
+
+    // 关闭设备文件描述符
+    close(si7006_fd);
+    close(ap3216_fd);
+    close(led_fd);
+    close(fan_fd);
+    close(motor_fd);
+
+    // 显示一条消息
+    printf("Device file descriptor closed\n");
+
+}
+
+void handle_sigint(int sig)
+{
+    // 关闭设备
+    close_device();
+    // 退出程序
+    exit(0);
+}
+
+
 /*主函数*/
 int main(int argc, char const *argv[])
 {
+    // 注册SIGINT信号的处理函数
+    signal(SIGINT, handle_sigint);
+
     if (argc != 3) {
         fprintf(stderr, "usage:%s <ip> <port>\n", argv[0]);
         exit(-1);
@@ -25,77 +68,67 @@ int main(int argc, char const *argv[])
     if ((fan_fd = open("/dev/fan", O_RDWR)) == -1)
         PRINT_ERR("打开fan设备节点失败");
 
+    if((motor_fd = open("/dev/motor",O_RDWR))==-1)
+        PRINT_ERR("打开motor设备节点失败");
+
     struct sockaddr_in server_addr;
     sockfd = client_network_init(sockfd, &server_addr, argv[1], atoi(argv[2]));
 
     // 连接服务器
-    if (-1 == connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr))) {
-        perror("fail to connect");
-        exit(-1);
-    }
-
+    if (-1 == connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr))) 
+        PRINT_ERR("fail to connect");
+  
     // 连接上位机
     strcpy(msgarm.user.username, "admin");
     strcpy(msgarm.user.password, "123456");
 
     // 发送登录信息
-    if (-1 == send(sockfd, &msgarm, sizeof(msg_arm_t), 0)) {
-        perror("fail to send");
-        exit(-1);
-    }
+    if (-1 == send(sockfd, &msgarm, sizeof(msg_arm_t), 0)) 
+        PRINT_ERR("fail to send");
 
     // 接收登录信息
-    if (-1 == recv(sockfd, &msgarm, sizeof(msg_arm_t), 0)) {
-        perror("fail to recv");
-        exit(-1);
-    }
+    if (-1 == recv(sockfd, &msgarm, sizeof(msg_arm_t), 0)) 
+        PRINT_ERR("fail to recv");
 
     if( 1 == msgarm.user.flags){
-
         puts("login success");
         /*创建维护环境线程*/
 		pthread_create(&tid,NULL,hold_envthread,NULL);
         pthread_detach(tid); // 分离线程
         puts("维护环境线程创建成功");
 
-        msg_arm_t buf;
-        buf = msgarm;
+        msg_arm_t threadbuf;
+        
         /*等待用户下发指令，执行指令，返回结果*/
         while(1){
             memset(&msgarm,0,sizeof(msg_arm_t));
             // 接收上位机的指令
             if (0 == recv(sockfd, &msgarm, sizeof(msg_arm_t), 0)) {
                 printf("Server closed the connection. Exiting.\n");
+                close_device(); // 关闭设备
                 exit(-1);
             }
-
+            threadbuf = msgarm; // 保存数据
             switch(msgarm.commd){
                 case 1:
                     /*获取环境数据*/
                     puts("获取环境数据");
-                    if (pthread_create(&tid, NULL, getenv_thpread, &sockfd) != 0) {
-                        perror("fail to create thread");
-                        exit(-1);
-                    }
+                    if (pthread_create(&tid, NULL, getenv_thpread, NULL) != 0) 
+                        PRINT_ERR("fail to create thread");
                     pthread_detach(tid);
                     break;
                 case 2:
                     /*设置阈值*/
                     puts("设置阈值");
-                    if (pthread_create(&tid, NULL, setlimit_thread, &buf) != 0) {
-                        perror("fail to create thread");
-                        exit(-1);
-                    }
+                    if (pthread_create(&tid, NULL, setlimit_thread, &threadbuf) != 0) 
+                        PRINT_ERR("fail to create thread");
                     pthread_detach(tid);
                     break;
                 case 3:
                     /*控制设备*/
                     puts("控制设备");
-                    devctrl = msgarm.devctrl;
-                    if (pthread_create(&tid, NULL, ctrldev_thread, &buf) != 0) {
-                        perror("fail to create thread");
-                        exit(-1);
-                    }
+                    if (pthread_create(&tid, NULL, ctrldev_thread, &threadbuf) != 0) 
+                        PRINT_ERR("fail to create thread");
                     pthread_detach(tid);
                     break;
                 default:
@@ -133,64 +166,70 @@ void *hold_envthread(void *argv)
     // 获取环境数据
     int tmp, hum;
     unsigned short als_data; // 光照传感器是16位ADC
-    float lux, resolution = 0.0049;
+    int fan_duty_cycle = 0;
+    int motor_duty_cycle = 0;
+    char fanbuf[10];
+    char motorbuf[10];
 
     contdevstatus = 0x00;
     setflags = 1;
 
     while (1) {
-        
         // 获取环境数据
         if (ioctl(si7006_fd, GET_TMP, &tmp) == -1)
             PRINT_ERR("ioctl error");
         if (ioctl(si7006_fd, GET_HUM, &hum) == -1)
             PRINT_ERR("ioctl error");
-        if(read(ap3216_fd, &als_data, sizeof(als_data)) == -1)
+        if (read(ap3216_fd, &als_data, sizeof(als_data)) == -1)
             PRINT_ERR("read error");
 
         conthume = 125.0 * hum / 65536 - 6;
         conttemp = 175.72 * tmp / 65536 - 46.85;
-        contlux = als_data * resolution;
+        contlux = als_data * 0.0049;
 
-        printf("温度:%.2f 湿度:%hhd%% 光强:%d\n",conttemp,conthume,contlux);
-
-        int duty_cycle = 0;
-        char buf[10];
+        printf("温度:%.2f 湿度:%.2f%% 光强:%.2f\n",conttemp,conthume,contlux);
 
         if(setflags){
-            if(conttemp>(settempup+0.5)){
-                duty_cycle = 3;
-                contdevstatus |= (0x3<<1);
-            }else if(conttemp>(settempup-0.5)){
-                duty_cycle = 0;
+            // 判断温度是否在阈值范围内
+            if(conttemp < settempup && conttemp > settempdown){
+                fan_duty_cycle = 0;
                 contdevstatus &= ~(0x3<<1);
+            } else {
+                fan_duty_cycle = 3;
+                contdevstatus |= (0x3<<1);
             }
 
-            if(conthume>(sethumeup+5)){
-				close(motor_fd);
-				contdevstatus &= ~(0x01<<3);
-			}else if(conthume<(sethumedown-5)){
-				if((motor_fd = open("/dev/motor",O_RDWR))==-1)
-                    PRINT_ERR("open error");
-				contdevstatus |= (0x01<<3);
-			}
+            // 判断湿度是否在阈值范围内
+            if(conthume < sethumeup && conthume > sethumedown){
+                motor_duty_cycle = 0;
+                contdevstatus &= ~(0x01<<3);
+            } else {
+                motor_duty_cycle = 1;
+                contdevstatus |= (0x01<<3);
+            }
 
-			if(contlux>(setluxup+10)){
-				for (int led_num = 1; led_num <= 6; led_num++) {
+            // 判断光照是否在阈值范围内
+            if(contlux < setluxup && contlux > setluxdown){
+                for (int led_num = 1; led_num <= 6; led_num++) {
                     ioctl(led_fd, LED_OFF, &led_num);
                 }
-				contdevstatus &= ~(0x01<<0);
-			}else if(contlux<(setluxdown-10)){
-				for (int led_num = 1; led_num <= 6; led_num++) {
+                contdevstatus &= ~(0x01<<0);
+            } else {
+                for (int led_num = 1; led_num <= 6; led_num++) {
                     ioctl(led_fd, LED_ON, &led_num);
                 }
-				contdevstatus |= (0x01<<0);
-			}
+                contdevstatus |= (0x01<<0);
+            }
         }
 
-        sprintf(buf, "%d", duty_cycle);
-        if (write(fan_fd, buf, sizeof(buf)) < 0)
+        sprintf(fanbuf, "%d", fan_duty_cycle);
+        if (write(fan_fd, fanbuf, sizeof(fanbuf)) < 0)
             PRINT_ERR("write error");
+        
+        sprintf(motorbuf, "%d", motor_duty_cycle);
+        if (write(motor_fd, motorbuf, sizeof(motorbuf)) < 0)
+            PRINT_ERR("write error");
+
         // 休眠一段时间继续工作
         sleep(3);
     }
@@ -204,13 +243,12 @@ void *getenv_thpread(void *argv)
     buf.envdata.temp = conttemp;
     buf.envdata.hume = conthume;
     buf.envdata.lux = contlux;
+    buf.envdata.devstatus = contdevstatus;
 
     //返回环境数据结果
     buf.user.flags = 1;
-    if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) {
-        perror("fail to send");
-        exit(-1);
-    }
+    if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) 
+        PRINT_ERR("fail to send");
 
     pthread_exit(NULL);
 }
@@ -231,30 +269,26 @@ void *setlimit_thread(void *argv)
     setluxup = buf.limitset.luxup;
     setluxdown = buf.limitset.luxdown;
 
-    printf("limit temp{%.2f,%.2f} hume{%d,%d} lux{%d,%d}",settempup,settempdown,sethumeup,sethumedown,setluxup
+    printf("set config : temp{%.2f,%.2f} hume{%.2f,%.2f} lux{%.2f,%.2f}\n",settempup,settempdown,sethumeup,sethumedown,setluxup
         ,setluxdown);
 
     //将参考变量数据写入到文件中
     FILE *fp = fopen("init.txt", "w");
-    if (fp == NULL) {
-        perror("fail to fopen");
-        exit(-1);
-    }
+    if (fp == NULL) PRINT_ERR("fail to fopen");
 
-    fprintf(fp, "tempup=%f\n", settempup);
-    fprintf(fp, "tempdown=%f\n", settempdown);
-    fprintf(fp, "humeup=%f\n", sethumeup);
-    fprintf(fp, "humedown=%f\n", sethumedown);
-    fprintf(fp, "luxup=%f\n", setluxup);
-    fprintf(fp, "luxdown=%f\n", setluxdown);
+    fprintf(fp, "tempup=%.2f\n", settempup);
+    fprintf(fp, "tempdown=%.2f\n", settempdown);
+    fprintf(fp, "humeup=%.2f\n", sethumeup);
+    fprintf(fp, "humedown=%.2f\n", sethumedown);
+    fprintf(fp, "luxup=%.2f\n", setluxup);
+    fprintf(fp, "luxdown=%.2f\n", setluxdown);
+
+    fclose(fp);
 
 	//将执行结果返回给服务器
     buf.user.flags = 1;
-    if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) {
-        perror("fail to send");
-        exit(-1);
-    }
-
+    if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) 
+        PRINT_ERR("fail to send");
     pthread_exit(NULL);
 }
 
@@ -263,11 +297,12 @@ void *ctrldev_thread(void *argv)
 {
     msg_arm_t buf = *(msg_arm_t *)argv;
     setflags = 0;
-    int duty_cycle = 0;
+    int motor_duty_cycle = 0, fan_duty_cycle = 0;
     char fanbuf[10];
+    char motorbuf[10];
 
     //根据 buf 中devctrl 字段对应的位，控制设备的启停操作
-
+    // 灯光控制
    if(buf.devctrl&(0x01<<0)){
         for (int led_num = 1; led_num <= 6; led_num++) {
             ioctl(led_fd, LED_ON, &led_num);
@@ -280,46 +315,48 @@ void *ctrldev_thread(void *argv)
 		contdevstatus &= ~(0x01<<0);
 	}
 
-	if(0x08==(buf.devctrl&(0x01<<3))){
-        if((motor_fd = open("/dev/motor",O_RDWR))==-1)
-            PRINT_ERR("open error"); 
+    // 马达控制
+	if(0x08 == (buf.devctrl&(0x01<<3))){
+        motor_duty_cycle = 1;
 		contdevstatus |= (0x01<<3);
 	}else{
-		close(motor_fd); 
+		motor_duty_cycle = 0; 
 		contdevstatus &= ~(0x01<<3);
 	}
 
-	if(0x02==(buf.devctrl&(0x03<<1))){
+    // 风扇控制
+	if(0x02 == (buf.devctrl&(0x03<<1))){
 		puts("1");
-		duty_cycle = 1;
+		fan_duty_cycle = 1;
 		contdevstatus &= ~(0x03<<1);
 		contdevstatus |= (0x01<<1);
 	}else if(0x04==(buf.devctrl&(0x03<<1))){
 		puts("2");
-		duty_cycle = 2;
+		fan_duty_cycle = 2;
 		contdevstatus &= ~(0x03<<1);
 		contdevstatus |= (0x02<<1);
 	}else if(0x06==(buf.devctrl&(0x03<<1))){
 		puts("3");
-		duty_cycle = 3;
+		fan_duty_cycle = 3;
 		contdevstatus &= ~(0x03<<1);
 		contdevstatus |= (0x03<<1);
 	}else{
-		duty_cycle = 0;
+		fan_duty_cycle = 0;
 		contdevstatus &= ~(0x03<<1);
 	}
 
-    sprintf(fanbuf, "%d", duty_cycle);
+    sprintf(fanbuf, "%d", fan_duty_cycle);
     if (write(fan_fd, fanbuf, sizeof(fanbuf)) < 0)
+        PRINT_ERR("write error");
+
+    sprintf(motorbuf, "%d", motor_duty_cycle);
+    if(write(motor_fd, motorbuf, sizeof(motorbuf)) < 0)
         PRINT_ERR("write error");
 
     // 返回执行结果
     buf.user.flags = 1;
-    if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) {
-        perror("fail to send");
-        exit(-1);
-    }
-
+    if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) 
+        PRINT_ERR("fail to send");
     pthread_exit(NULL);
 }
 
@@ -327,10 +364,7 @@ int read_config(void)
 {
     // 读取参考文件数据赋值给参考变量
     FILE *fp = fopen("init.txt", "r");
-    if (fp == NULL) {
-        perror("fail to fopen");
-        exit(-1);
-    }
+    if (fp == NULL) PRINT_ERR("fail to fopen");
 
     // fscanf(文件指针, "格式化字符串", 参数列表), %hhu 无符号字符
     fscanf(fp, "tempup=%f\n", &settempup);
@@ -339,6 +373,9 @@ int read_config(void)
     fscanf(fp, "humedown=%f\n", &sethumedown);
     fscanf(fp, "luxup=%f\n", &setluxup);
     fscanf(fp, "luxdown=%f\n", &setluxdown);
+
+    printf("open config : temp{%.2f,%.2f} hume{%.2f,%.2f} lux{%.2f,%.2f}\n",settempup,settempdown,sethumeup,sethumedown,setluxup
+        ,setluxdown);
 
     fclose(fp);
 

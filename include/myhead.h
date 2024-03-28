@@ -19,10 +19,12 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/errno.h>
+#include <sys/time.h>
+#include <errno.h>
 #include "cgic.h"
 
 #define MSGPATH "/home/jeremy/" //消息队列路径
-#define PRINT_ERR(massge) do { perror(massge); exit(1); } while (0)
+#define PRINT_ERR(massge) do { perror(massge); close_device(); exit(1); } while (0)
 
 key_t key;          //消息队列 key
 int msgid;          //消息队列 id

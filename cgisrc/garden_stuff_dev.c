@@ -5,7 +5,6 @@ long rettype;	//消息队列接收类型
 void handler(int argc)
 {
 	msgrcv(msgid,&msg,sizeof(msg_t)-sizeof(long),rettype/2,IPC_NOWAIT);
-
 	printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
 	printf("<script>alert('网络原因导致数据不可达，请稍后重试'); window.location.href = '/greenhouse/garden_stuff.html';</script>");
 	exit(0);
@@ -47,7 +46,7 @@ int cgiMain(int argc, const char *argv[])
 	}
 
 	/*封装消息*/
-	rettype = msg.msgtype*2;
+	rettype = msg.msgtype * 2;
 	msg.commd = 3;//获取环境数据
 	
 	char data[10] = {0};
