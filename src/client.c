@@ -133,6 +133,7 @@ int main(int argc, char const *argv[])
         }
     } else {
         printf("login fail\n");
+        return -1;
     }
     return 0;
 }
@@ -241,6 +242,13 @@ void *getenv_thpread(void *argv)
     buf.envdata.hume = conthume;
     buf.envdata.lux = contlux;
     buf.envdata.devstatus = contdevstatus;
+
+    buf.limitset.tempup = settempup;
+    buf.limitset.tempdown = settempdown;
+    buf.limitset.humeup = sethumeup;
+    buf.limitset.humedown = sethumedown;
+    buf.limitset.luxup = setluxup;
+    buf.limitset.luxdown = setluxdown;
 
     //返回环境数据结果
     buf.user.flags = 1;

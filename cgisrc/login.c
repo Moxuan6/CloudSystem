@@ -21,9 +21,6 @@ void handler(int argc)
 
 int cgiMain(int argc, const char *argv[])
 {
-    // 设置http头部和编码
-    // cgiHeaderContentType("text/html; charset=utf-8"); 
-    
     // 获取表单数据
     cgiFormString("ID", username, 20);
     cgiFormString("PASSWORD", password, 20);

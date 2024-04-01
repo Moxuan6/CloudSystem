@@ -93,6 +93,15 @@ int main(int argc, char const *argv[])
         exit(-1);
     }
 
+    /*信号量初始化*/
+    if(sem_init(&linksem, 0, 1) == -1){
+        perror("fail to sem_init");
+        close(sockfd);
+        msgctl(msgid, IPC_RMID, NULL); // 删除消息队列
+        destroy_link(&head);
+        exit(-1);
+    }
+
     /*创建心跳包线程，检索下位机是否存活*/
     if (pthread_create(&tid, NULL, insprct_thread, NULL) != 0) {
         perror("fail to pthread_create");
@@ -101,6 +110,7 @@ int main(int argc, char const *argv[])
         destroy_link(&head);
         exit(-1);
     }
+    pthread_detach(tid); // 分离线程
 
     // 创建处理检索下位机在线状态的线程
     if (pthread_create(&tid, NULL, login_thread, NULL) != 0) {
@@ -224,7 +234,7 @@ void *insprct_thread(void *argv) {
     while (1) {
         show_list(head);
         sleep(10);
-        puts("检测下位机是否在线...");
+        puts("检测下位机在线状态...");
     }
 }
 
