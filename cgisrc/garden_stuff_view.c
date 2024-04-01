@@ -11,7 +11,7 @@ void handler(int argc)
 	printf("<html>");
 	printf("<body>");
 	printf("<center>");
-	printf("<h1>网络原因导致数据不可达，请稍后重试</h1>");
+	printf("<h1>网络原因导致数据不可达,请稍后重试</h1>");
 	printf("</center>");
 	printf("</body>");
 	printf("</html>");
@@ -85,16 +85,26 @@ int cgiMain(int argc, const char *argv[])
 		printf("<th bgcolor=\"#00FFFF\">湿度</th>");
 		printf("<th bgcolor=\"#00FFFF\">光强</th>");
 		printf("<tr>");
-		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">%.2f</td>",msg.envdata.temp);
-		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">%.2f%%</td>",msg.envdata.hume);
-		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\">%.2flux</td>",msg.envdata.lux);
+		printf("<td bgcolor=\"#E55451\" width=\"80\" height=\"20\" style=\"text-align: center;\">上:%.2f</td>",msg.limitset.tempup);
+		printf("<td bgcolor=\"#E55451\" width=\"80\" height=\"20\" style=\"text-align: center;\">上:%.2f%%</td>",msg.limitset.humeup);
+		printf("<td bgcolor=\"#E55451\" width=\"80\" height=\"20\" style=\"text-align: center;\">上:%.2flux</td>",msg.limitset.luxup);
+		printf("</tr>");
+		printf("<tr>");
+		printf("<td bgcolor=\"#00FF00\" width=\"80\" height=\"20\">%.2f</td>",msg.envdata.temp);
+		printf("<td bgcolor=\"#00FF00\" width=\"80\" height=\"20\">%.2f%%</td>",msg.envdata.hume);
+		printf("<td bgcolor=\"#00FF00\" width=\"80\" height=\"20\">%.2flux</td>",msg.envdata.lux);
+		printf("</tr>");
+		printf("<tr>");
+		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\" style=\"text-align: center;\">下:%.2f</td>",msg.limitset.tempdown);
+		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\" style=\"text-align: center;\">下:%.2f%%</td>",msg.limitset.humedown);
+		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\" style=\"text-align: center;\">下:%.2flux</td>",msg.limitset.luxdown);
 		printf("</tr>");
 		printf("</table>");
 		printf("<h4>设备状态</h4>");
 		printf("<table border = \"1\">");
 		printf("<th bgcolor=\"#00FFFF\" >照明</th>");
 		printf("<th bgcolor=\"#00FFFF\">温控</th>");
-		printf("<th bgcolor=\"#00FFFF\">湿控</th>");
+		printf("<th bgcolor=\"#00FFFF\">水泵</th>");
 		printf("<tr>");
 
 		/*设备状态甄别显示*/
@@ -145,7 +155,7 @@ int cgiMain(int argc, const char *argv[])
 		printf("<html>");
 		printf("<body bgcolor=\"#00FFFF\">");
 		printf("<center>");
-		printf("<h4>网络原因导致数据不可达，请稍后重试2</h4>");
+		printf("<h4>网络原因导致数据不可达,请稍后重试2</h4>");
 		printf("</center>");
 		printf("</body>");
 		printf("</html>");

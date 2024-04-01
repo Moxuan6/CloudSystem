@@ -105,30 +105,30 @@ int main(int argc, char const *argv[])
                 exit(-1);
             }
             threadbuf = msgarm; // 保存数据
-            switch(msgarm.commd){
-                case 1:
-                    /*获取环境数据*/
-                    puts("获取环境数据");
-                    if (pthread_create(&tid, NULL, getenv_thpread, NULL) != 0) 
-                        PRINT_ERR("fail to create thread");
-                    pthread_detach(tid);
-                    break;
-                case 2:
-                    /*设置阈值*/
-                    puts("设置阈值");
-                    if (pthread_create(&tid, NULL, setlimit_thread, &threadbuf) != 0) 
-                        PRINT_ERR("fail to create thread");
-                    pthread_detach(tid);
-                    break;
-                case 3:
-                    /*控制设备*/
-                    puts("控制设备");
-                    if (pthread_create(&tid, NULL, ctrldev_thread, &threadbuf) != 0) 
-                        PRINT_ERR("fail to create thread");
-                    pthread_detach(tid);
-                    break;
-                default:
-                    break;
+            switch (msgarm.commd) {
+            case 1:
+                /*获取环境数据*/
+                puts("获取环境数据");
+                if (pthread_create(&tid, NULL, getenv_thpread, NULL) != 0)
+                    PRINT_ERR("fail to create thread");
+                pthread_detach(tid);
+                break;
+            case 2:
+                /*设置阈值*/
+                puts("设置阈值");
+                if (pthread_create(&tid, NULL, setlimit_thread, &threadbuf) != 0)
+                    PRINT_ERR("fail to create thread");
+                pthread_detach(tid);
+                break;
+            case 3:
+                /*控制设备*/
+                puts("控制设备");
+                if (pthread_create(&tid, NULL, ctrldev_thread, &threadbuf) != 0)
+                    PRINT_ERR("fail to create thread");
+                pthread_detach(tid);
+                break;
+            default:
+                break;
             }
         }
     } else {
@@ -223,7 +223,12 @@ void *hold_envthread(void *argv)
             PRINT_ERR("write error");
 
         // 休眠一段时间继续工作
-        sleep(3);
+        if(!setflags) {
+            sleep(120);
+            setflags = 1;
+        } else {
+            sleep(3);
+        }
     }
 }
 
