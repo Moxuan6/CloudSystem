@@ -130,7 +130,7 @@ void *login_thread(void *argv);
 link_t *create_link();
 
 /* 增加数据 */
-void insert_link(link_t *head, const char *ID, int fd);
+void insert_link(link_t *head, const char *ID, int fd, pthread_t tid);
 
 /* 根据ID查找 */
 int find_link(link_t *head, const char *ID);
@@ -158,5 +158,8 @@ int client_network_init(int sockfd, struct sockaddr_in *addr, const char *ip, in
 
 /*获取文件配置*/
 int read_config(void);
+
+/*检测设备*/
+void *insprct_thread(void *argv);
 
 #endif

@@ -171,7 +171,12 @@ void *handl_thread(void *argv)
         printf("等待的消息类型为%ld,发送的消息类型为%ld\n",recvmsgtype,sendmsgtype);
         send(accept_fd, &buf, sizeof(msg_t), 0);
         
-        insert_link(head, buf.user.username, accept_fd);    // 插入链表
+        pthread_t tid = pthread_self();
+
+        /*获取信号量，插入链表*/
+        sem_wait(&linksem);
+        insert_link(head, buf.user.username, accept_fd, tid);    // 插入链表
+        sem_post(&linksem);
 
         while(1){
             memset(&buf, 0, sizeof(msg_t));
@@ -181,14 +186,14 @@ void *handl_thread(void *argv)
             // 发送消息
 
             sem_wait(&linksem);
-            if(find_link(head, sockfd)) {
+            if (find_link(head, accept_fd)) {
                 sem_wait(&linksem);
-                delete_link(head, sockfd);
+                delete_link(head, accept_fd);
                 sem_post(&linksem);
                 buf.msgtype = sendmsgtype;  // 发送消息类型
                 buf.user.flags = 0;         // 失败
                 msgsnd(msgid, &buf, sizeof(msg_t) - sizeof(long), 0);
-                close(sockfd);
+                close(accept_fd);
                 pthread_exit(NULL);
             }
             sem_post(&linksem);
@@ -267,7 +272,7 @@ link_t *create_link()
 }
 
 /*增加数据*/
-void insert_link(link_t *head, const char *ID, int fd)
+void insert_link(link_t *head, const char *ID, int fd, pthread_t tid)
 {
     if (head == NULL || ID == NULL) {
         return;
@@ -280,6 +285,7 @@ void insert_link(link_t *head, const char *ID, int fd)
     memset(p, 0, sizeof(link_t));
     strcpy(p->ID, ID);
     p->fd = fd;
+    p->tid = tid;
     p->next = head->next;
     head->next = p;
 }
@@ -298,6 +304,20 @@ int find_link(link_t *head, const char *ID)
         }
         p = p->next;
     }
+    return -1;
+}
+
+/*根据fd查找*/
+int find_fd(link_t *head, int fd) 
+{
+    link_t *p = head->next;
+    while (p) {
+        if (p->fd == fd){
+            return 0;
+        }
+        p = p->next;
+    }
+
     return -1;
 }
 
