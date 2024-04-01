@@ -93,6 +93,15 @@ int main(int argc, char const *argv[])
         exit(-1);
     }
 
+    /*创建心跳包线程，检索下位机是否存活*/
+    if (pthread_create(&tid, NULL, insprct_thread, NULL) != 0) {
+        perror("fail to pthread_create");
+        close(sockfd);
+        msgctl(msgid, IPC_RMID, NULL); // 删除消息队列
+        destroy_link(&head);
+        exit(-1);
+    }
+
     // 创建处理检索下位机在线状态的线程
     if (pthread_create(&tid, NULL, login_thread, NULL) != 0) {
         perror("fail to pthread_create");
@@ -170,6 +179,19 @@ void *handl_thread(void *argv)
             msgrcv(msgid, &buf, sizeof(msg_t) - sizeof(long), recvmsgtype, 0);
             puts("接收到消息...");
             // 发送消息
+
+            sem_wait(&linksem);
+            if(find_link(head, sockfd)) {
+                sem_wait(&linksem);
+                delete_link(head, sockfd);
+                sem_post(&linksem);
+                buf.msgtype = sendmsgtype;  // 发送消息类型
+                buf.user.flags = 0;         // 失败
+                msgsnd(msgid, &buf, sizeof(msg_t) - sizeof(long), 0);
+                close(sockfd);
+                pthread_exit(NULL);
+            }
+            sem_post(&linksem);
             send(accept_fd, &buf, sizeof(msg_t), 0);
             // 接收消息       
             ret = recv(accept_fd, &buf, sizeof(msg_t), 0);
@@ -180,7 +202,6 @@ void *handl_thread(void *argv)
             }
             // 返回结果
             buf.msgtype = sendmsgtype;  // 发送消息类型
-            // buf.user.flags = 1;         // 成功
             msgsnd(msgid, &buf, sizeof(msg_t) - sizeof(long), 0);
         }
     
@@ -190,6 +211,15 @@ void *handl_thread(void *argv)
         send(accept_fd, &buf, sizeof(msg_t), 0);
         close(accept_fd);
         pthread_exit(NULL);     // 退出线程
+    }
+}
+
+void *insprct_thread(void *argv) {
+    msg_t buf;
+    while (1) {
+        show_list(head);
+        sleep(10);
+        puts("检测下位机是否在线...");
     }
 }
 
@@ -307,4 +337,26 @@ void destroy_link(link_t **head)
     }
     free(*head);
     *head = NULL;
+}
+
+int show_list(link_t *head) {
+    msg_t buf;
+    link_t *p = head->next;
+    while (p) {
+        memset(&buf, 0, sizeof(msg_t));
+        buf.commd = 255;
+        send(p->fd, &buf, sizeof(msg_t), 0);
+        if(0 >> recv(p->fd, &buf, sizeof(msg_t), 0)){
+            printf("%s 离线\n", p->ID);
+            pthread_cancel(p->tid);
+            sem_wait(&linksem);
+            delete_link(head, p->fd);
+            sem_post(&linksem);
+            p = head->next;
+        } else {
+            printf("当前 %s 在线\n", p->ID);
+            p = p->next;
+        }
+    }
+    return 0;
 }

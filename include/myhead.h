@@ -26,12 +26,6 @@
 #define MSGPATH "/home/jeremy/" //消息队列路径
 #define PRINT_ERR(massge) do { perror(massge); close_device(); exit(1); } while (0)
 
-key_t key;          //消息队列 key
-int msgid;          //消息队列 id
-pthread_t tid;      //线程ID
-int led_fd,motor_fd,si7006_fd,ap3216_fd,fan_fd; //设备文件描述符
-int sockfd;         //网络套接字
-
 /* 统一数据结构 */
 /* 登录数据 */
 typedef struct {
@@ -105,10 +99,17 @@ float setluxdown;
 typedef struct node{
     char ID[32];
     int fd;
+    pthread_t tid;
     struct node *next;
 }link_t;
 
 link_t *head;       //链表头指针
+key_t key;          //消息队列 key
+int msgid;          //消息队列 id
+pthread_t tid;      //线程ID
+int led_fd,motor_fd,si7006_fd,ap3216_fd,fan_fd; //设备文件描述符
+int sockfd;         //网络套接字
+sem_t linksem;      //信号量
 
 #define LED_ON _IOW('L', 0, int)
 #define LED_OFF _IOW('L', 1, int)
