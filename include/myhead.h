@@ -163,7 +163,7 @@ void *ctrldev_thread(void *argv);
 int client_network_init(int sockfd, struct sockaddr_in *addr, const char *ip, int port);
 
 /*获取文件配置*/
-int read_config(void);
+int read_config(msg_arm_t *armbuf);
 
 /*检测设备*/
 void *insprct_thread(void *argv);

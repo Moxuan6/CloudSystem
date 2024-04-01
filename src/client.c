@@ -49,7 +49,8 @@ int main(int argc, char const *argv[])
     }
 
     // 读取参考文件
-    read_config();
+    if(read_config(&msgarm) == -1)
+        PRINT_ERR("read config error");
 
     // 打开设备节点
     if ((si7006_fd = open("/dev/si7006", O_RDWR)) == -1)
@@ -126,6 +127,10 @@ int main(int argc, char const *argv[])
                 if (pthread_create(&tid, NULL, ctrldev_thread, &threadbuf) != 0)
                     PRINT_ERR("fail to create thread");
                 pthread_detach(tid);
+                break;
+            case 255:
+                if(-1 == send(sockfd, &msgarm, sizeof(msg_arm_t), 0))
+                    PRINT_ERR("fail to send");
                 break;
             default:
                 break;
@@ -213,16 +218,15 @@ void *hold_envthread(void *argv)
                 }
                 contdevstatus |= (0x01<<0);
             }
+
+            sprintf(fanbuf, "%d", fan_duty_cycle);
+            if (write(fan_fd, fanbuf, sizeof(fanbuf)) < 0)
+                PRINT_ERR("write error");
+            
+            sprintf(motorbuf, "%d", motor_duty_cycle);
+            if (write(motor_fd, motorbuf, sizeof(motorbuf)) < 0)
+                PRINT_ERR("write error");
         }
-
-        sprintf(fanbuf, "%d", fan_duty_cycle);
-        if (write(fan_fd, fanbuf, sizeof(fanbuf)) < 0)
-            PRINT_ERR("write error");
-        
-        sprintf(motorbuf, "%d", motor_duty_cycle);
-        if (write(motor_fd, motorbuf, sizeof(motorbuf)) < 0)
-            PRINT_ERR("write error");
-
         // 休眠一段时间继续工作
         if(!setflags) {
             sleep(120);
@@ -294,6 +298,7 @@ void *setlimit_thread(void *argv)
     buf.user.flags = 1;
     if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) 
         PRINT_ERR("fail to send");
+    puts("set limit success");
     pthread_exit(NULL);
 }
 
@@ -359,28 +364,36 @@ void *ctrldev_thread(void *argv)
     buf.user.flags = 1;
     if (-1 == send(sockfd, &buf, sizeof(msg_arm_t), 0)) 
         PRINT_ERR("fail to send");
+    puts("ctrl dev success");
     
     pthread_exit(NULL);
 }
 
-int read_config(void)
+int read_config(msg_arm_t *armbuf)
 {
     // 读取参考文件数据赋值给参考变量
     FILE *fp = fopen("init.txt", "r");
     if (fp == NULL) PRINT_ERR("fail to fopen");
 
     // fscanf(文件指针, "格式化字符串", 参数列表), %hhu 无符号字符
-    fscanf(fp, "tempup=%f\n", &settempup);
-    fscanf(fp, "tempdown=%f\n", &settempdown);
-    fscanf(fp, "humeup=%f\n", &sethumeup);
-    fscanf(fp, "humedown=%f\n", &sethumedown);
-    fscanf(fp, "luxup=%f\n", &setluxup);
-    fscanf(fp, "luxdown=%f\n", &setluxdown);
-
-    printf("open config : temp{%.2f,%.2f} hume{%.2f,%.2f} lux{%.2f,%.2f}\n",settempup,settempdown,sethumeup,sethumedown,setluxup
-        ,setluxdown);
+    fscanf(fp, "tempup=%f\n", &armbuf->limitset.tempup);
+    fscanf(fp, "tempdown=%f\n", &armbuf->limitset.tempdown);
+    fscanf(fp, "humeup=%f\n", &armbuf->limitset.humeup);
+    fscanf(fp, "humedown=%f\n", &armbuf->limitset.humedown);
+    fscanf(fp, "luxup=%f\n", &armbuf->limitset.luxup);
+    fscanf(fp, "luxdown=%f\n", &armbuf->limitset.luxdown);
 
     fclose(fp);
 
+    settempup = armbuf->limitset.tempup;
+    settempdown = armbuf->limitset.tempdown;
+    sethumeup = armbuf->limitset.humeup;
+    sethumedown = armbuf->limitset.humedown;
+    setluxup = armbuf->limitset.luxup;
+    setluxdown = armbuf->limitset.luxdown;
+    printf("open config : temp{%.2f,%.2f} hume{%.2f,%.2f} lux{%.2f,%.2f}\n",settempup,settempdown,sethumeup,sethumedown,setluxup
+    ,setluxdown);
+    puts("read config success");
+    
     return 0;
 }

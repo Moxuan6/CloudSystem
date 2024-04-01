@@ -85,9 +85,9 @@ int cgiMain(int argc, const char *argv[])
 		printf("<th bgcolor=\"#00FFFF\">湿度</th>");
 		printf("<th bgcolor=\"#00FFFF\">光强</th>");
 		printf("<tr>");
-		printf("<td bgcolor=\"#E55451\" width=\"80\" height=\"20\" style=\"text-align: center;\">上:%.2f</td>",msg.limitset.tempup);
-		printf("<td bgcolor=\"#E55451\" width=\"80\" height=\"20\" style=\"text-align: center;\">上:%.2f%%</td>",msg.limitset.humeup);
-		printf("<td bgcolor=\"#E55451\" width=\"80\" height=\"20\" style=\"text-align: center;\">上:%.2flux</td>",msg.limitset.luxup);
+		printf("<td bgcolor=\"#E55451\" width=\"80\" height=\"20\" style=\"text-align: center; font-size: 13px;\">上: %.2f</td>",msg.limitset.tempup);
+		printf("<td bgcolor=\"#E55451\" width=\"80\" height=\"20\" style=\"text-align: center; font-size: 13px;\">上: %.2f%%</td>",msg.limitset.humeup);
+		printf("<td bgcolor=\"#E55451\" width=\"80\" height=\"20\" style=\"text-align: center; font-size: 13px;\">上: %.2flux</td>",msg.limitset.luxup);
 		printf("</tr>");
 		printf("<tr>");
 		printf("<td bgcolor=\"#00FF00\" width=\"80\" height=\"20\">%.2f</td>",msg.envdata.temp);
@@ -95,9 +95,9 @@ int cgiMain(int argc, const char *argv[])
 		printf("<td bgcolor=\"#00FF00\" width=\"80\" height=\"20\">%.2flux</td>",msg.envdata.lux);
 		printf("</tr>");
 		printf("<tr>");
-		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\" style=\"text-align: center;\">下:%.2f</td>",msg.limitset.tempdown);
-		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\" style=\"text-align: center;\">下:%.2f%%</td>",msg.limitset.humedown);
-		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\" style=\"text-align: center;\">下:%.2flux</td>",msg.limitset.luxdown);
+		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\" style=\"text-align: center; font-size: 13px;\">下: %.2f</td>",msg.limitset.tempdown);
+		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\" style=\"text-align: center; font-size: 13px;\">下: %.2f%%</td>",msg.limitset.humedown);
+		printf("<td bgcolor=\"yellow\" width=\"80\" height=\"20\" style=\"text-align: center; font-size: 13px;\">下: %.2flux</td>",msg.limitset.luxdown);
 		printf("</tr>");
 		printf("</table>");
 		printf("<h4>设备状态</h4>");

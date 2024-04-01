@@ -96,7 +96,7 @@ int cgiMain(int argc, const char *argv[])
 	memset(&msg,0,sizeof(msg_t));
 	msgrcv(msgid,&msg,sizeof(msg_t)-sizeof(long),rettype,0);
 
-	if(1==msg.user.flags){
+	if(1 == msg.user.flags){
 		printf("Content-type: text/html;charset=\"UTF-8\"\n\n");//固定格式 必须要加
 		printf("<script>alert('提交成功'); window.location.href = '/greenhouse/garden_stuff.html';</script>");
 	}else{

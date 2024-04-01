@@ -181,11 +181,11 @@ void *handl_thread(void *argv)
         printf("等待的消息类型为%ld,发送的消息类型为%ld\n",recvmsgtype,sendmsgtype);
         send(accept_fd, &buf, sizeof(msg_t), 0);
         
-        pthread_t tid = pthread_self();
+        pthread_t tidd = pthread_self();
 
         /*获取信号量，插入链表*/
         sem_wait(&linksem);
-        insert_link(head, buf.user.username, accept_fd, tid);    // 插入链表
+        insert_link(head, buf.user.username, accept_fd, tidd);    // 插入链表
         sem_post(&linksem);
 
         while(1){
@@ -194,7 +194,6 @@ void *handl_thread(void *argv)
             msgrcv(msgid, &buf, sizeof(msg_t) - sizeof(long), recvmsgtype, 0);
             puts("接收到消息...");
             // 发送消息
-
             sem_wait(&linksem);
             if (find_fd(head, accept_fd)) {
                 sem_wait(&linksem);
@@ -208,11 +207,15 @@ void *handl_thread(void *argv)
             }
             sem_post(&linksem);
             send(accept_fd, &buf, sizeof(msg_t), 0);
-            // 接收消息       
+            // 等待结果       
             ret = recv(accept_fd, &buf, sizeof(msg_t), 0);
             if(ret == 0){
                 close(accept_fd);
-                delete_link(head, accept_fd); // 删除链表中的节点
+
+                // 删除链表中的节点
+                sem_wait(&linksem);
+                delete_link(head, accept_fd);
+                sem_post(&linksem);
                 pthread_exit(NULL);
             }
             // 返回结果
@@ -287,15 +290,16 @@ void insert_link(link_t *head, const char *ID, int fd, pthread_t tid)
     if (head == NULL || ID == NULL) {
         return;
     }
-    link_t *p = (link_t *)malloc(sizeof(link_t));
+    link_t *p = create_link();
     if (p == NULL) {
         perror("fail to malloc");
         exit(-1);
     }
-    memset(p, 0, sizeof(link_t));
     strcpy(p->ID, ID);
     p->fd = fd;
     p->tid = tid;
+    p->next = head->next;
+
     p->next = head->next;
     head->next = p;
 }
@@ -376,7 +380,7 @@ int show_list(link_t *head) {
         memset(&buf, 0, sizeof(msg_t));
         buf.commd = 255;
         send(p->fd, &buf, sizeof(msg_t), 0);
-        if(0 >> recv(p->fd, &buf, sizeof(msg_t), 0)){
+        if(0 >= recv(p->fd, &buf, sizeof(msg_t), 0)){
             printf("%s 离线\n", p->ID);
             pthread_cancel(p->tid);
             sem_wait(&linksem);
