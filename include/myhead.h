@@ -135,11 +135,17 @@ void insert_link(link_t *head, const char *ID, int fd, pthread_t tid);
 /* 根据ID查找 */
 int find_link(link_t *head, const char *ID);
 
+/*根据fd查找*/
+int find_fd(link_t *head, int fd);
+
 /* 根据fd删除 */
 void delete_link(link_t *head, int fd);
 
 /* 销毁链表 */
 void destroy_link(link_t **head);
+
+/* 显示链表 */
+int show_list(link_t *head);
 
 /*根据用户设置的阈值维护恒定环境线程*/
 void *hold_envthread(void *argv);

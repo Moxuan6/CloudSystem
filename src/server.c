@@ -186,7 +186,7 @@ void *handl_thread(void *argv)
             // 发送消息
 
             sem_wait(&linksem);
-            if (find_link(head, accept_fd)) {
+            if (find_fd(head, accept_fd)) {
                 sem_wait(&linksem);
                 delete_link(head, accept_fd);
                 sem_post(&linksem);
