@@ -134,7 +134,7 @@ int main(int argc, char const *argv[])
             exit(-1);
         }
 
-        puts("有下位机连接成功");
+        puts("有下位机连接成功...");
 
         // 创建处理线程
         if (pthread_create(&tid, NULL, handl_thread, &accept_fd) != 0) {
@@ -166,7 +166,7 @@ void *handl_thread(void *argv)
         pthread_exit(NULL);
     }
 
-    printf("ID:%s\n", buf.user.username);
+    // printf("ID:%s\n", buf.user.username);
 
     if( 0 == strcmp(buf.user.username, ID) && 0 == strcmp(buf.user.password, PS)){
         buf.user.flags = 1;     // 成功
@@ -178,7 +178,7 @@ void *handl_thread(void *argv)
         }
         
         sendmsgtype = recvmsgtype * 2;  // 发送消息类型
-        printf("等待的消息类型为%ld,发送的消息类型为%ld\n",recvmsgtype,sendmsgtype);
+        // printf("等待的消息类型为%ld,发送的消息类型为%ld\n",recvmsgtype,sendmsgtype);
         send(accept_fd, &buf, sizeof(msg_t), 0);
         
         pthread_t tidd = pthread_self();
@@ -192,7 +192,7 @@ void *handl_thread(void *argv)
             memset(&buf, 0, sizeof(msg_t));
             // 等待消息
             msgrcv(msgid, &buf, sizeof(msg_t) - sizeof(long), recvmsgtype, 0);
-            puts("接收到消息...");
+            // puts("接收到消息...");
             // 发送消息
             sem_wait(&linksem);
             if (find_fd(head, accept_fd)) {
@@ -237,6 +237,7 @@ void *insprct_thread(void *argv) {
     while (1) {
         show_list(head);
         sleep(10);
+        system("clear");
         puts("检测下位机在线状态...");
     }
 }
@@ -255,7 +256,7 @@ void *login_thread(void *argv)
         }
 
         // 遍历链表
-        printf("ID:%s\n", buf.user.username);
+        // printf("ID:%s\n", buf.user.username);
         if (find_link(head, buf.user.username) == -1) {
             buf.user.flags = 0; // 失败
         } else {

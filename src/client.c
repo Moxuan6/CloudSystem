@@ -92,7 +92,6 @@ int main(int argc, char const *argv[])
         /*创建维护环境线程*/
 		pthread_create(&tid,NULL,hold_envthread,NULL);
         pthread_detach(tid); // 分离线程
-        puts("create hold_envthread success");
 
         msg_arm_t threadbuf;
         
@@ -109,21 +108,18 @@ int main(int argc, char const *argv[])
             switch (msgarm.commd) {
             case 1:
                 /*获取环境数据*/
-                puts("getenv data");
                 if (pthread_create(&tid, NULL, getenv_thpread, NULL) != 0)
                     PRINT_ERR("fail to create thread");
                 pthread_detach(tid);
                 break;
             case 2:
                 /*设置阈值*/
-                puts("set limit");
                 if (pthread_create(&tid, NULL, setlimit_thread, &threadbuf) != 0)
                     PRINT_ERR("fail to create thread");
                 pthread_detach(tid);
                 break;
             case 3:
                 /*控制设备*/
-                puts("ctrl dev");
                 if (pthread_create(&tid, NULL, ctrldev_thread, &threadbuf) != 0)
                     PRINT_ERR("fail to create thread");
                 pthread_detach(tid);
@@ -185,6 +181,7 @@ void *hold_envthread(void *argv)
         conttemp = 175.72 * tmp / 65536 - 46.85;
         contlux = als_data * 0.0049;
 
+        system("clear");
         printf("temp:%.2f hume:%.2f%% lux:%.2f\n",conttemp,conthume,contlux);
 
         if(setflags){
