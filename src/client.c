@@ -54,19 +54,19 @@ int main(int argc, char const *argv[])
 
     // 打开设备节点
     if ((si7006_fd = open("/dev/si7006", O_RDWR)) == -1)
-        PRINT_ERR("打开si7006设备节点失败");
+        PRINT_ERR("open si7006 device error");
     
     if ((ap3216_fd = open("/dev/ap3216", O_RDWR)) == -1)
-        PRINT_ERR("打开ap3216设备节点失败");
+        PRINT_ERR("open ap3216 device error");
 
     if ((led_fd = open("/dev/myled", O_RDWR)) == -1)
-        PRINT_ERR("打开led设备节点失败");
+        PRINT_ERR("open led device error");
 
     if ((fan_fd = open("/dev/fan", O_RDWR)) == -1)
-        PRINT_ERR("打开fan设备节点失败");
+        PRINT_ERR("open fan device error");
 
     if((motor_fd = open("/dev/motor",O_RDWR))==-1)
-        PRINT_ERR("打开motor设备节点失败");
+        PRINT_ERR("open motor device error");
 
     struct sockaddr_in server_addr;
     sockfd = client_network_init(sockfd, &server_addr, argv[1], atoi(argv[2]));
@@ -92,7 +92,7 @@ int main(int argc, char const *argv[])
         /*创建维护环境线程*/
 		pthread_create(&tid,NULL,hold_envthread,NULL);
         pthread_detach(tid); // 分离线程
-        puts("维护环境线程创建成功");
+        puts("create hold_envthread success");
 
         msg_arm_t threadbuf;
         
@@ -109,21 +109,21 @@ int main(int argc, char const *argv[])
             switch (msgarm.commd) {
             case 1:
                 /*获取环境数据*/
-                puts("获取环境数据");
+                puts("getenv data");
                 if (pthread_create(&tid, NULL, getenv_thpread, NULL) != 0)
                     PRINT_ERR("fail to create thread");
                 pthread_detach(tid);
                 break;
             case 2:
                 /*设置阈值*/
-                puts("设置阈值");
+                puts("set limit");
                 if (pthread_create(&tid, NULL, setlimit_thread, &threadbuf) != 0)
                     PRINT_ERR("fail to create thread");
                 pthread_detach(tid);
                 break;
             case 3:
                 /*控制设备*/
-                puts("控制设备");
+                puts("ctrl dev");
                 if (pthread_create(&tid, NULL, ctrldev_thread, &threadbuf) != 0)
                     PRINT_ERR("fail to create thread");
                 pthread_detach(tid);
@@ -185,7 +185,7 @@ void *hold_envthread(void *argv)
         conttemp = 175.72 * tmp / 65536 - 46.85;
         contlux = als_data * 0.0049;
 
-        printf("温度:%.2f 湿度:%.2f%% 光强:%.2f\n",conttemp,conthume,contlux);
+        printf("temp:%.2f hume:%.2f%% lux:%.2f\n",conttemp,conthume,contlux);
 
         if(setflags){
             // 判断温度是否在阈值范围内
